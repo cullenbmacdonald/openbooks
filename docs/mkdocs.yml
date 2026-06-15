@@ -65,9 +65,13 @@ nav:
   - Changelog: changelog.md
   - Developers:
       - Home: developers/index.md
+      - Local Development: developers/development.md
       - Dev Container: developers/dev-container.md
-      - Experimental: developers/experimental.md
       - Architecture: developers/architecture.md
+      - IRC & DCC: developers/irc-and-dcc.md
+      - Adding an Interface: developers/adding-an-interface.md
+      - Discord Bot: developers/discord-bot.md
+      - Experimental: developers/experimental.md
       - To-Do: developers/todo.md
 
 

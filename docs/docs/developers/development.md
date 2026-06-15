@@ -1,7 +1,5 @@
 # Local development
 
-> Engineering reference for contributors/agents.
-
 ## Prerequisites
 
 - Go (module targets `go 1.19`).
@@ -12,6 +10,7 @@
 
 ```bash
 task                 # list available tasks
+task dev:init        # install Go + NPM dependencies
 task dev:mock        # run the mock IRC + DCC server (localhost:6667)
 task dev:server      # build + run web server against the mock (--tls=false)
 task dev:cli         # build + run CLI against the mock
@@ -91,4 +90,3 @@ offline. Point any interface at it with `--server localhost:6667 --tls=false`.
   commits.
 - Respect IRC etiquette (rate limit, version allow-list) — see
   [irc-and-dcc.md](irc-and-dcc.md#constraints-you-must-respect).
-- Commit only when asked; branch off `master` first if needed.

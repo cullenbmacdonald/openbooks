@@ -1,7 +1,5 @@
 # Discord bot
 
-> Engineering reference for the `discord/` package.
-
 The Discord bot lets users search for and download eBooks from Discord via a
 `/request-book` slash command. It runs **alongside the web server** rather than
 as a separate binary.

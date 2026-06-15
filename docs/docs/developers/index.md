@@ -31,6 +31,16 @@ Run the following commands in separate terminals.
 
 : Compiles and runs OpenBooks in CLI mode. Connects to the Mock IRC server.
 
+## Reference
+
+New to the codebase? Start here:
+
+- [Architecture](./architecture.md) — how the shared core and interfaces fit together.
+- [IRC & DCC](./irc-and-dcc.md) — the search/download protocol and IRC constraints.
+- [Adding an Interface](./adding-an-interface.md) — build a new UI on `core.IrcClient`.
+- [Discord Bot](./discord-bot.md) — the Discord bot's design and configuration.
+- [Local Development](./development.md) — building, testing, and gotchas.
+
 <!-- ## Why / How
 
 - I wrote this as an easier way to search and download books from irchighway.net. It handles all the extraction and data processing for you. You just have to click the book you want. Hopefully you find it much easier than the IRC interface.

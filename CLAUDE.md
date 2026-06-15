@@ -14,7 +14,7 @@ There is **one** implementation of "connect to IRC, search, download, parse":
 `core.IrcClient` (`core/client.go`). Every interface is a thin wrapper that calls
 it and supplies a `core.Handlers` callback struct. **Do not** reimplement IRC,
 DCC, or search-result parsing inside a UI — wire up `core.IrcClient` instead.
-See [docs/adding-an-interface.md](docs/adding-an-interface.md).
+See [Adding an Interface](docs/docs/developers/adding-an-interface.md).
 
 ## Layout
 
@@ -76,23 +76,22 @@ don't "fix" it unless that's the task.
 - **IRC etiquette is load-bearing.** Searches are rate-limited (≥10s) and IRC
   Highway **allow-lists client versions** via CTCP VERSION. `ircVersion` in
   `cmd/openbooks/main.go` must stay on their allow-list or connections are
-  blocked. See [docs/irc-and-dcc.md](docs/irc-and-dcc.md).
+  blocked. See [IRC & DCC](docs/docs/developers/irc-and-dcc.md).
 - **DCC transfers can stall.** `dcc/dcc.go` has a dial timeout + per-read idle
   deadline so a stalled sender fails instead of hanging with a `.temp` file.
 - **The Discord bot shares one IRC connection** for all users, so it serializes
   requests through a `Broker` and connects with a distinct nick (`<name>-bot`)
   to avoid colliding with the web server. See
-  [docs/discord-bot.md](docs/discord-bot.md).
+  [Discord Bot](docs/docs/developers/discord-bot.md).
 - **Don't commit `server/app/package-lock.json` churn.** npm rewrites it with
   `"peer": true` noise; keep it out of unrelated commits.
 
 ## Deeper docs
 
-- [docs/architecture.md](docs/architecture.md) — packages, layering, data flow
-- [docs/irc-and-dcc.md](docs/irc-and-dcc.md) — the IRC/DCC search+download protocol
-- [docs/adding-an-interface.md](docs/adding-an-interface.md) — build a new UI on `core.IrcClient`
-- [docs/discord-bot.md](docs/discord-bot.md) — Discord bot design + config
-- [docs/development.md](docs/development.md) — local dev, mock servers, workflows
+These live in the mkdocs **Developers** section (`docs/docs/developers/`):
 
-> These `docs/*.md` are engineering references for contributors/agents. The
-> published user docs are the mkdocs site under `docs/docs/`.
+- [Architecture](docs/docs/developers/architecture.md) — packages, layering, data flow
+- [IRC & DCC](docs/docs/developers/irc-and-dcc.md) — the IRC/DCC search+download protocol
+- [Adding an Interface](docs/docs/developers/adding-an-interface.md) — build a new UI on `core.IrcClient`
+- [Discord Bot](docs/docs/developers/discord-bot.md) — Discord bot design + config
+- [Local Development](docs/docs/developers/development.md) — local dev, mock servers, workflows

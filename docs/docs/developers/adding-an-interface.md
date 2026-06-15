@@ -1,7 +1,5 @@
 # Adding a new interface
 
-> Engineering reference for contributors/agents.
-
 A new way to drive OpenBooks (a TUI, a REST API, a Telegram bot, …) should be a
 **thin wrapper over `core.IrcClient`**. Never reimplement IRC, DCC, or search
 parsing — that logic is shared and lives in `core/`. The CLI, web server, and

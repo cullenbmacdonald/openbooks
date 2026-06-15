@@ -1,7 +1,8 @@
-# IRC + DCC: how search and download actually work
+# IRC + DCC
 
-> Engineering reference. End-user/etiquette notes also live in
-> `docs/docs/irc-notes.md`.
+How search and download actually work under the hood. See also the
+[IRC Notes](../irc-notes.md) for user-facing etiquette and the constraints IRC
+Highway places on clients.
 
 OpenBooks is essentially a purpose-built IRC client for IRC Highway's `#ebooks`
 channel. Everything funnels through two protocols: IRC (control) and DCC (file
