@@ -85,3 +85,17 @@ if (!window.IntersectionObserver) {
   window.IntersectionObserver =
     IntersectionObserverStub as unknown as typeof IntersectionObserver;
 }
+
+// jsdom never performs layout, so offsetWidth/offsetHeight are always 0.
+// @tanstack/react-virtual (stable 3.x) only renders virtual items once its
+// scroll element reports a non-zero measured size, so virtualized tables
+// would render empty in tests without this. Give every element a
+// reasonable non-zero size.
+Object.defineProperty(HTMLElement.prototype, "offsetWidth", {
+  configurable: true,
+  value: 1000
+});
+Object.defineProperty(HTMLElement.prototype, "offsetHeight", {
+  configurable: true,
+  value: 1000
+});

@@ -35,7 +35,7 @@ export default function ErrorTable({
 
   const { classes, cx, theme } = useTableStyles();
   const { ref: elementSizeRef, height, width } = useElementSize();
-  const virtualizerRef = useRef();
+  const virtualizerRef = useRef<HTMLDivElement>(null);
   const mergedRef = useMergedRef(elementSizeRef, virtualizerRef);
 
   const columns = useMemo(() => {
