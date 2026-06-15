@@ -12,7 +12,7 @@ import {
 } from "@mantine/core";
 import { Column, Table } from "@tanstack/react-table";
 import { useVirtualizer } from "@tanstack/react-virtual";
-import { CaretDown, MagnifyingGlass } from "phosphor-react";
+import { CaretDown, MagnifyingGlass } from "@phosphor-icons/react";
 import { CSSProperties, JSX, useRef, useState } from "react";
 import { useGetServersQuery } from "../../../state/api";
 

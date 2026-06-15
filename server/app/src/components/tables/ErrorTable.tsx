@@ -9,7 +9,7 @@ import {
   useReactTable
 } from "@tanstack/react-table";
 import { useVirtualizer } from "@tanstack/react-virtual";
-import { MagnifyingGlass, WarningCircle } from "phosphor-react";
+import { MagnifyingGlass, WarningCircle } from "@phosphor-icons/react";
 import { useEffect, useMemo, useRef } from "react";
 import { ParseError } from "../../state/messages";
 import { TextFilter } from "./Filters/TextFilter";

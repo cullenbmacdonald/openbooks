@@ -20,7 +20,7 @@ import {
   useReactTable
 } from "@tanstack/react-table";
 import { useVirtualizer } from "@tanstack/react-virtual";
-import { MagnifyingGlass, User } from "phosphor-react";
+import { MagnifyingGlass, User } from "@phosphor-icons/react";
 import { useMemo, useRef, useState } from "react";
 import { useSelector } from "react-redux";
 import { useGetServersQuery } from "../../state/api";
