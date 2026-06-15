@@ -1,8 +1,6 @@
 module github.com/evan-buss/openbooks
 
-go 1.26
-
-toolchain go1.26.1
+go 1.26.4
 
 require (
 	github.com/dsnet/compress v0.0.2-0.20230904184137-39efe44ab707 // indirect
