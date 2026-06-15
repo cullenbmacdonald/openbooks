@@ -1,6 +1,8 @@
 module github.com/evan-buss/openbooks
 
-go 1.19
+go 1.26
+
+toolchain go1.26.1
 
 require (
 	github.com/dsnet/compress v0.0.2-0.20210315054119-f66993602bf5 // indirect
@@ -24,6 +26,7 @@ require (
 )
 
 require (
+	github.com/bwmarrin/discordgo v0.29.0
 	github.com/davecgh/go-spew v1.1.1
 	github.com/inkeliz/gowebview v1.0.1
 )
@@ -31,7 +34,6 @@ require (
 require (
 	git.wow.st/gmp/jni v0.0.0-20210610011705-34026c7e22d0 // indirect
 	github.com/andybalholm/brotli v1.0.4 // indirect
-	github.com/bwmarrin/discordgo v0.29.0 // indirect
 	github.com/inconshreveable/mousetrap v1.0.1 // indirect
 	github.com/inkeliz/w32 v1.0.2 // indirect
 	github.com/klauspost/compress v1.15.9 // indirect
@@ -41,8 +43,8 @@ require (
 	github.com/pierrec/lz4/v4 v4.1.15 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/rivo/uniseg v0.3.4 // indirect
-	golang.org/x/crypto v0.0.0-20220829220503-c86fa9a7ed90 // indirect
-	golang.org/x/sys v0.0.0-20220906165534-d0df966e6959 // indirect
-	golang.org/x/term v0.0.0-20220722155259-a9ba230a4035 // indirect
+	golang.org/x/crypto v0.53.0 // indirect
+	golang.org/x/sys v0.46.0 // indirect
+	golang.org/x/term v0.44.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
