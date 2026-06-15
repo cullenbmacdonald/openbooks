@@ -90,11 +90,10 @@ export default async function globalSetup() {
     );
   });
 
-  const buildMock = spawn(
-    "go",
-    ["build", "-o", mockBin, "./cmd/mock_server"],
-    { cwd: REPO_ROOT, stdio: "inherit" }
-  );
+  const buildMock = spawn("go", ["build", "-o", mockBin, "./cmd/mock_server"], {
+    cwd: REPO_ROOT,
+    stdio: "inherit"
+  });
   await new Promise<void>((resolve, reject) => {
     buildMock.on("exit", (code) =>
       code === 0

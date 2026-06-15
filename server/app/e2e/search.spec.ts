@@ -36,9 +36,7 @@ test("search, download, history, and color-scheme persistence", async ({
   // Results table populates from the mock SearchBot response.
   const resultsTable = page.getByRole("table");
   await expect(resultsTable).toBeVisible({ timeout: 20_000 });
-  await expect(
-    resultsTable.getByText(/gatsby/i).first()
-  ).toBeVisible();
+  await expect(resultsTable.getByText(/gatsby/i).first()).toBeVisible();
 
   // --- History sidebar shows the query with a result count badge ---
   const historyEntry = page.getByRole("button", {
