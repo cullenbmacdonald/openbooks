@@ -1,4 +1,4 @@
-import { ScrollArea, Table, Text } from "@mantine/core";
+import { ScrollArea, Table, Text, useComputedColorScheme } from "@mantine/core";
 import { useElementSize, useMergedRef, useTextSelection } from "@mantine/hooks";
 import {
   createColumnHelper,
@@ -33,8 +33,9 @@ export default function ErrorTable({
     setSearchQuery(selectionText);
   }, [selectionText]);
 
-  const { classes, cx, theme } = useTableStyles();
-  const { ref: elementSizeRef, height, width } = useElementSize();
+  const { classes, cx } = useTableStyles();
+  const colorScheme = useComputedColorScheme("light");
+  const { ref: elementSizeRef, width } = useElementSize();
   const virtualizerRef = useRef<HTMLDivElement>(null);
   const mergedRef = useMergedRef(elementSizeRef, virtualizerRef);
 
@@ -99,7 +100,7 @@ export default function ErrorTable({
 
   return (
     <>
-      <Text size="sm" color="dimmed" sx={{ width: "100%" }} mb={4}>
+      <Text size="sm" c="dimmed" w="100%" mb={4}>
         These results could not be parsed to due to their non-standard format.
         To download, copy the line up to the <code>::INFO::</code> or file size
         at the end and paste into the text box above.
@@ -112,18 +113,18 @@ export default function ErrorTable({
         scrollbarSize={6}
         styles={{ thumb: { ["&::before"]: { minWidth: 4 } } }}
         offsetScrollbars={false}>
-        <Table highlightOnHover verticalSpacing="sm" fontSize="xs">
-          <thead className={classes.head}>
+        <Table highlightOnHover verticalSpacing="sm" fz="xs">
+          <Table.Thead className={classes.head}>
             {table.getHeaderGroups().map((headerGroup) => (
-              <tr key={headerGroup.id}>
+              <Table.Tr key={headerGroup.id}>
                 {headerGroup.headers.map((header) => (
-                  <th
+                  <Table.Th
                     key={header.id}
                     style={{
                       color:
-                        theme.colorScheme === "dark"
-                          ? theme.colors.dark[3]
-                          : theme.colors.dark[1],
+                        colorScheme === "dark"
+                          ? "var(--mantine-color-dark-3)"
+                          : "var(--mantine-color-dark-1)",
                       width: header.getSize(),
                       position: "relative",
                       textTransform: "uppercase"
@@ -139,45 +140,45 @@ export default function ErrorTable({
                         ["isResizing"]: header.column.getIsResizing()
                       })}
                     />
-                  </th>
+                  </Table.Th>
                 ))}
-              </tr>
+              </Table.Tr>
             ))}
-          </thead>
+          </Table.Thead>
 
-          <tbody>
+          <Table.Tbody>
             {paddingTop > 0 && (
-              <tr>
-                <td style={{ height: `${paddingTop}px` }} />
-              </tr>
+              <Table.Tr>
+                <Table.Td style={{ height: `${paddingTop}px` }} />
+              </Table.Tr>
             )}
             {rowVirtualizer.getVirtualItems().map((virtualRow) => {
               const row = tableRows[
                 virtualRow.index
               ] as unknown as Row<ParseError>;
               return (
-                <tr key={row.id} style={{ height: 50 }}>
+                <Table.Tr key={row.id} style={{ height: 50 }}>
                   {row.getVisibleCells().map((cell) => {
                     return (
-                      <td key={cell.id}>
-                        <Text lineClamp={1} color="dark">
+                      <Table.Td key={cell.id}>
+                        <Text lineClamp={1} c="dark">
                           {flexRender(
                             cell.column.columnDef.cell,
                             cell.getContext()
                           )}
                         </Text>
-                      </td>
+                      </Table.Td>
                     );
                   })}
-                </tr>
+                </Table.Tr>
               );
             })}
             {paddingBottom > 0 && (
-              <tr>
-                <td style={{ height: `${paddingBottom}px` }} />
-              </tr>
+              <Table.Tr>
+                <Table.Td style={{ height: `${paddingBottom}px` }} />
+              </Table.Tr>
             )}
-          </tbody>
+          </Table.Tbody>
         </Table>
       </ScrollArea>
     </>

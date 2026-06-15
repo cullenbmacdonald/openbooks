@@ -2,14 +2,14 @@ import {
   ActionIcon,
   Button,
   Center,
-  createStyles,
   Group,
   Image,
-  MediaQuery,
   Stack,
   TextInput,
-  Title
+  Title,
+  useComputedColorScheme
 } from "@mantine/core";
+import { createStyles } from "@mantine/emotion";
 import { MagnifyingGlass, Sidebar, Warning } from "@phosphor-icons/react";
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import image from "../assets/reading.svg";
@@ -20,37 +20,36 @@ import { sendMessage, sendSearch, toggleSidebar } from "../state/stateSlice";
 import { useAppDispatch, useAppSelector } from "../state/store";
 
 const useStyles = createStyles(
-  (theme, { errorMode }: { errorMode: boolean }) => ({
-    stack: {
-      minWidth: "100%",
-      margin: theme.spacing.xl,
-      backgroundColor: theme.colors.blue[0]
-    },
+  (theme, { errorMode }: { errorMode: boolean }, u) => ({
     wFull: {
       width: "100%"
+    },
+    page: {
+      width: "100%",
+      margin: theme.spacing.xl
+    },
+    form: {
+      marginBottom: theme.spacing.md
     },
     errorToggle: {
       "alignSelf": "start",
       "height": "24px",
       "marginBottom": theme.spacing.xs,
       "fontWeight": 500,
-      "color":
-        theme.colorScheme === "dark"
-          ? errorMode
-            ? theme.colors.dark[8]
-            : theme.colors.dark[2]
-          : errorMode
-            ? theme.colors.white
-            : theme.colors.dark[3],
+      "color": errorMode ? theme.colors.white : theme.colors.dark[3],
       "&:hover": {
-        backgroundColor:
-          theme.colorScheme === "dark"
-            ? errorMode
-              ? theme.colors.brand[3]
-              : theme.colors.dark[7]
-            : errorMode
-              ? theme.colors.brand[5]
-              : theme.colors.gray[1]
+        backgroundColor: errorMode
+          ? theme.colors.brand[5]
+          : theme.colors.gray[1]
+      },
+
+      [u.dark]: {
+        "color": errorMode ? theme.colors.dark[8] : theme.colors.dark[2],
+        "&:hover": {
+          backgroundColor: errorMode
+            ? theme.colors.brand[3]
+            : theme.colors.dark[7]
+        }
       }
     }
   })
@@ -70,7 +69,8 @@ export default function SearchPage() {
     ? searchQuery.startsWith("!")
     : searchQuery !== "";
 
-  const { classes, theme } = useStyles({ errorMode: !!errorMode });
+  const { classes } = useStyles({ errorMode: !!errorMode });
+  const colorScheme = useComputedColorScheme("light");
 
   useEffect(() => {
     setShowErrors(false);
@@ -109,15 +109,9 @@ export default function SearchPage() {
   );
 
   return (
-    <Stack
-      spacing={0}
-      align="center"
-      sx={(theme) => ({ width: "100%", margin: theme.spacing.xl })}>
+    <Stack gap={0} align="center" className={classes.page}>
       <form className={classes.wFull} onSubmit={(e) => searchHandler(e)}>
-        <Group
-          noWrap
-          spacing="md"
-          sx={(theme) => ({ marginBottom: theme.spacing.md })}>
+        <Group wrap="nowrap" gap="md" className={classes.form}>
           {!opened && (
             <ActionIcon size="lg" onClick={() => dispatch(toggleSidebar())}>
               <Sidebar weight="bold" size={20}></Sidebar>
@@ -134,13 +128,13 @@ export default function SearchPage() {
             }
             radius="md"
             type="search"
-            icon={<MagnifyingGlass weight="bold" size={22} />}
+            leftSection={<MagnifyingGlass weight="bold" size={22} />}
             required
           />
 
           <Button
             type="submit"
-            color={theme.colorScheme === "dark" ? "brand.2" : "brand"}
+            color={colorScheme === "dark" ? "brand.2" : "brand"}
             disabled={!validInput}
             radius="md"
             variant={validInput ? "gradient" : "default"}
@@ -155,7 +149,7 @@ export default function SearchPage() {
           className={classes.errorToggle}
           variant={errorMode ? "filled" : "subtle"}
           onClick={() => setShowErrors((show) => !show)}
-          leftIcon={<Warning size={18} />}
+          leftSection={<Warning size={18} />}
           size="xs">
           {activeItem?.errors?.length} Parsing{" "}
           {activeItem?.errors?.length === 1 ? "Error" : "Errors"}
@@ -164,25 +158,23 @@ export default function SearchPage() {
       {!activeItem ? (
         <Center style={{ height: "100%", width: "100%" }}>
           <Stack align="center">
-            <Title weight="normal" align="center">
+            <Title fw="normal" ta="center">
               Search a book to get started.
             </Title>
-            <MediaQuery smallerThan="md" styles={{ display: "none" }}>
-              <Image
-                width={600}
-                fit="contain"
-                src={image}
-                alt="person reading"
-              />
-            </MediaQuery>
-            <MediaQuery largerThan="md" styles={{ display: "none" }}>
-              <Image
-                width={300}
-                fit="contain"
-                src={image}
-                alt="person reading"
-              />
-            </MediaQuery>
+            <Image
+              visibleFrom="md"
+              width={600}
+              fit="contain"
+              src={image}
+              alt="person reading"
+            />
+            <Image
+              hiddenFrom="md"
+              width={300}
+              fit="contain"
+              src={image}
+              alt="person reading"
+            />
           </Stack>
         </Center>
       ) : errorMode ? (

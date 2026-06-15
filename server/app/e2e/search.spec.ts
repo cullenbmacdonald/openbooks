@@ -63,11 +63,16 @@ test("search, download, history, and color-scheme persistence", async ({
   ).toBeVisible({ timeout: 20_000 });
 
   // --- Dark / light mode toggle persists across reload ---
-  // Mantine 5 has no `data-mantine-color-scheme` DOM attribute (that's a
-  // Mantine 7+ addition); the color scheme lives in the
-  // `useLocalStorage`-backed "color-scheme" key.
+  // Mantine 9's localStorageColorSchemeManager() persists the resolved
+  // scheme under the "mantine-color-scheme-value" localStorage key, and
+  // MantineProvider reflects it on <html data-mantine-color-scheme="...">.
   const getStoredScheme = () =>
-    page.evaluate(() => localStorage.getItem("color-scheme"));
+    page.evaluate(() => localStorage.getItem("mantine-color-scheme-value"));
+
+  const getDomScheme = () =>
+    page.evaluate(() =>
+      document.documentElement.getAttribute("data-mantine-color-scheme")
+    );
 
   const initialScheme = await getStoredScheme();
 
@@ -78,10 +83,12 @@ test("search, download, history, and color-scheme persistence", async ({
 
   await expect.poll(getStoredScheme).not.toBe(initialScheme);
   const toggledScheme = await getStoredScheme();
+  await expect.poll(getDomScheme).toBe(toggledScheme);
 
   await page.reload();
 
   await expect.poll(getStoredScheme).toBe(toggledScheme);
+  await expect.poll(getDomScheme).toBe(toggledScheme);
 
   // No console.error or uncaught page errors over the whole flow.
   expect(consoleErrors, "no console.error or page errors").toEqual([]);

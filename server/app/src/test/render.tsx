@@ -1,10 +1,11 @@
-import { ColorSchemeProvider, MantineProvider } from "@mantine/core";
-import { NotificationsProvider } from "@mantine/notifications";
+import { MantineProvider } from "@mantine/core";
+import { emotionTransform, MantineEmotionProvider } from "@mantine/emotion";
+import { Notifications } from "@mantine/notifications";
 import { configureStore } from "@reduxjs/toolkit";
 import { setupListeners } from "@reduxjs/toolkit/query/react";
 import { render, RenderOptions } from "@testing-library/react";
 import { enableMapSet } from "immer";
-import { ReactElement, ReactNode, useState } from "react";
+import { ReactElement, ReactNode } from "react";
 import { Provider } from "react-redux";
 import { openbooksApi } from "../state/api";
 import historyReducer from "../state/historySlice";
@@ -52,46 +53,38 @@ export function renderWithStore(
   };
 }
 
-// Mirrors the Mantine provider wiring in App.tsx (ColorSchemeProvider +
-// MantineProvider + NotificationsProvider), without the AppShell/emotion
-// cache wrapper. Used to render individual components that rely on Mantine
-// context (theme, color scheme, notifications) outside of the full <App/>.
+// Mirrors the Mantine provider wiring in App.tsx (MantineProvider +
+// MantineEmotionProvider + Notifications), without the AppShell wrapper.
+// Used to render individual components that rely on Mantine context (theme,
+// color scheme, notifications) outside of the full <App/>.
 function Providers({ children }: { children: ReactNode }) {
-  const [colorScheme, setColorScheme] = useState<"light" | "dark">("light");
-
   return (
-    <ColorSchemeProvider
-      colorScheme={colorScheme}
-      toggleColorScheme={() =>
-        setColorScheme((color) => (color === "dark" ? "light" : "dark"))
-      }>
-      <MantineProvider
-        withGlobalStyles
-        withNormalizeCSS
-        theme={{
-          colorScheme,
-          primaryColor: "brand",
-          primaryShade: { light: 4, dark: 2 },
-          colors: {
-            brand: [
-              "#e0ecff",
-              "#b0c6ff",
-              "#7e9fff",
-              "#4c79ff",
-              "#3366ff",
-              "#0039e6",
-              "#002db4",
-              "#002082",
-              "#001351",
-              "#000621"
-            ]
-          }
-        }}>
-        <NotificationsProvider position="top-center">
-          {children}
-        </NotificationsProvider>
-      </MantineProvider>
-    </ColorSchemeProvider>
+    <MantineProvider
+      defaultColorScheme="light"
+      stylesTransform={emotionTransform}
+      theme={{
+        primaryColor: "brand",
+        primaryShade: { light: 4, dark: 2 },
+        colors: {
+          brand: [
+            "#e0ecff",
+            "#b0c6ff",
+            "#7e9fff",
+            "#4c79ff",
+            "#3366ff",
+            "#0039e6",
+            "#002db4",
+            "#002082",
+            "#001351",
+            "#000621"
+          ]
+        }
+      }}>
+      <MantineEmotionProvider>
+        <Notifications position="top-center" />
+        {children}
+      </MantineEmotionProvider>
+    </MantineProvider>
   );
 }
 

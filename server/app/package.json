@@ -14,10 +14,11 @@
     "e2e": "playwright test"
   },
   "dependencies": {
-    "@emotion/react": "^11.10.4",
-    "@mantine/core": "^5.2.6",
-    "@mantine/hooks": "^5.2.6",
-    "@mantine/notifications": "^5.2.6",
+    "@emotion/react": "^11.14.0",
+    "@mantine/core": "^9.3.1",
+    "@mantine/emotion": "^9.3.1",
+    "@mantine/hooks": "^9.3.1",
+    "@mantine/notifications": "^9.3.1",
     "@phosphor-icons/react": "^2.1.10",
     "@reduxjs/toolkit": "^2.12.0",
     "@tanstack/react-table": "^8.21.3",

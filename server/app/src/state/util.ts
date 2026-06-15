@@ -1,4 +1,4 @@
-import { showNotification } from "@mantine/notifications";
+import { notifications } from "@mantine/notifications";
 import { Notification, NotificationType } from "./messages";
 
 export const getWebsocketURL = (): URL => {
@@ -32,14 +32,14 @@ export const displayNotification = ({
 }: Notification) => {
   switch (appearance) {
     case NotificationType.NOTIFY:
-      showNotification({
+      notifications.show({
         color: "brand",
         title: title,
         message: detail
       });
       break;
     case NotificationType.SUCCESS:
-      showNotification({
+      notifications.show({
         color: "green",
         title: title,
         message: detail
@@ -47,14 +47,14 @@ export const displayNotification = ({
 
       break;
     case NotificationType.WARNING:
-      showNotification({
+      notifications.show({
         color: "yellow",
         title: title,
         message: detail
       });
       break;
     case NotificationType.DANGER:
-      showNotification({
+      notifications.show({
         color: "red",
         title: title,
         message: detail

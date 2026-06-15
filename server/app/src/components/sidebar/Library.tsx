@@ -29,7 +29,7 @@ export default function Library() {
   if (isError) {
     return (
       <Center>
-        <Text color="dimmed" size="sm">
+        <Text c="dimmed" size="sm">
           Book persistence disabled.
         </Text>
       </Center>
@@ -39,7 +39,7 @@ export default function Library() {
   if (isSuccess && data?.length === 0) {
     return (
       <Center>
-        <Text color="dimmed" size="sm">
+        <Text c="dimmed" size="sm">
           No previous downloads.
         </Text>
       </Center>
@@ -47,7 +47,7 @@ export default function Library() {
   }
 
   return (
-    <Stack spacing="xs">
+    <Stack gap="xs">
       <AnimatePresence mode="popLayout">
         {data?.map((book) => (
           <motion.div {...defaultAnimation} key={book.name}>
@@ -77,8 +77,8 @@ function LibraryCard({ book }: LibraryCardProps) {
             radius="sm"
             variant="outline"
             fullWidth
-            leftIcon={<BookIcon weight="bold" size={18} />}
-            rightIcon={
+            leftSection={<BookIcon weight="bold" size={18} />}
+            rightSection={
               <Badge color="brand" radius="sm" size="sm" variant="light">
                 {new Date(book.time).toLocaleDateString("en-US")}
               </Badge>
@@ -90,14 +90,14 @@ function LibraryCard({ book }: LibraryCardProps) {
 
       <Menu.Dropdown>
         <Menu.Item
-          icon={<Download weight="bold" />}
+          leftSection={<Download weight="bold" />}
           onClick={() => downloadFile(book.downloadLink)}>
           Download
         </Menu.Item>
 
         <Menu.Item
           color="red"
-          icon={<Trash size={18} weight="bold" />}
+          leftSection={<Trash size={18} weight="bold" />}
           onClick={() => deleteBook(book.name)}>
           Delete
         </Menu.Item>

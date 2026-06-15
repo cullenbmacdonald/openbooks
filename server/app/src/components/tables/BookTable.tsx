@@ -73,11 +73,7 @@ export default function BookTable({ books }: BookTableProps) {
         cell: (props) => {
           const online = servers?.includes(props.getValue());
           return (
-            <Text
-              size={12}
-              weight="normal"
-              color="dark"
-              style={{ marginLeft: 20 }}>
+            <Text size="12px" fw="normal" c="dark" style={{ marginLeft: 20 }}>
               <Tooltip
                 position="top-start"
                 label={online ? "Online" : "Offline"}>
@@ -189,12 +185,12 @@ export default function BookTable({ books }: BookTableProps) {
       scrollbarSize={6}
       styles={{ thumb: { ["&::before"]: { minWidth: 4 } } }}
       offsetScrollbars={false}>
-      <Table highlightOnHover verticalSpacing="sm" fontSize="xs">
-        <thead className={classes.head}>
+      <Table highlightOnHover verticalSpacing="sm" fz="xs">
+        <Table.Thead className={classes.head}>
           {table.getHeaderGroups().map((headerGroup) => (
-            <tr key={headerGroup.id}>
+            <Table.Tr key={headerGroup.id}>
               {headerGroup.headers.map((header) => (
-                <th
+                <Table.Th
                   key={header.id}
                   className={classes.headerCell}
                   style={{
@@ -211,44 +207,44 @@ export default function BookTable({ books }: BookTableProps) {
                       ["isResizing"]: header.column.getIsResizing()
                     })}
                   />
-                </th>
+                </Table.Th>
               ))}
-            </tr>
+            </Table.Tr>
           ))}
-        </thead>
-        <tbody>
+        </Table.Thead>
+        <Table.Tbody>
           {paddingTop > 0 && (
-            <tr>
-              <td style={{ height: `${paddingTop}px` }} />
-            </tr>
+            <Table.Tr>
+              <Table.Td style={{ height: `${paddingTop}px` }} />
+            </Table.Tr>
           )}
           {rowVirtualizer.getVirtualItems().map((virtualRow) => {
             const row = tableRows[
               virtualRow.index
             ] as unknown as Row<BookDetail>;
             return (
-              <tr key={row.id} style={{ height: 50 }}>
+              <Table.Tr key={row.id} style={{ height: 50 }}>
                 {row.getVisibleCells().map((cell) => {
                   return (
-                    <td key={cell.id}>
-                      <Text lineClamp={1} color="dark">
+                    <Table.Td key={cell.id}>
+                      <Text lineClamp={1} c="dark">
                         {flexRender(
                           cell.column.columnDef.cell,
                           cell.getContext()
                         )}
                       </Text>
-                    </td>
+                    </Table.Td>
                   );
                 })}
-              </tr>
+              </Table.Tr>
             );
           })}
           {paddingBottom > 0 && (
-            <tr>
-              <td style={{ height: `${paddingBottom}px` }} />
-            </tr>
+            <Table.Tr>
+              <Table.Td style={{ height: `${paddingBottom}px` }} />
+            </Table.Tr>
           )}
-        </tbody>
+        </Table.Tbody>
       </Table>
     </ScrollArea>
   );
@@ -271,11 +267,10 @@ function DownloadButton({ book }: { book: string }) {
 
   return (
     <Button
-      compact
-      size="xs"
+      size="compact-xs"
       radius="sm"
       onClick={onClick}
-      sx={{ fontWeight: "normal", width: 80 }}>
+      style={{ fontWeight: "normal", width: 80 }}>
       {isInFlight ? (
         <Loader variant="dots" color="gray" />
       ) : (

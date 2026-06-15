@@ -1,15 +1,15 @@
 import {
   ActionIcon,
+  AppShell,
   Burger,
-  createStyles,
   Group,
-  MediaQuery,
-  Navbar,
   SegmentedControl,
   Text,
   Tooltip,
+  useComputedColorScheme,
   useMantineColorScheme
 } from "@mantine/core";
+import { createStyles } from "@mantine/emotion";
 import { useLocalStorage } from "@mantine/hooks";
 import {
   BellSimple,
@@ -25,26 +25,30 @@ import { useAppDispatch, useAppSelector } from "../../state/store";
 import History from "./History";
 import Library from "./Library";
 
-const useStyles = createStyles((theme, _params, getRef) => {
+const useStyles = createStyles((theme, _params, u) => {
   return {
     navbar: {
-      backgroundColor:
-        theme.colorScheme === "dark" ? theme.colors.dark[7] : theme.white
+      backgroundColor: theme.white,
+
+      [u.dark]: {
+        backgroundColor: theme.colors.dark[7]
+      }
     },
     footer: {
-      borderTop: `1px solid ${
-        theme.colorScheme === "dark"
-          ? theme.colors.dark[4]
-          : theme.colors.gray[3]
-      }`,
-      paddingTop: theme.spacing.sm
+      borderTop: `1px solid ${theme.colors.gray[3]}`,
+      paddingTop: theme.spacing.sm,
+
+      [u.dark]: {
+        borderTop: `1px solid ${theme.colors.dark[4]}`
+      }
     }
   };
 });
 
 export default function Sidebar() {
   const { classes } = useStyles();
-  const { colorScheme, toggleColorScheme } = useMantineColorScheme();
+  const { toggleColorScheme } = useMantineColorScheme();
+  const colorScheme = useComputedColorScheme("light");
 
   const dispatch = useAppDispatch();
   const connected = useAppSelector((store) => store.state.isConnected);
@@ -61,14 +65,10 @@ export default function Sidebar() {
   }
 
   return (
-    <Navbar
-      width={{ sm: 300 }}
-      hiddenBreakpoint="sm"
-      hidden={!opened}
-      className={classes.navbar}>
-      <Navbar.Section p="sm">
-        <Group position="apart">
-          <Text weight="bold" size="lg">
+    <>
+      <AppShell.Section p="sm" className={classes.navbar}>
+        <Group justify="space-between">
+          <Text fw="bold" size="lg">
             OpenBooks
           </Text>
           <Group>
@@ -83,17 +83,16 @@ export default function Sidebar() {
                 <BellSimple weight="bold" size={18} />
               </ActionIcon>
             </Tooltip>
-            <MediaQuery largerThan="sm" styles={{ display: "none" }}>
-              <Burger
-                opened={opened}
-                onClick={() => dispatch(toggleSidebar())}
-                size="sm"
-              />
-            </MediaQuery>
+            <Burger
+              hiddenFrom="sm"
+              opened={opened}
+              onClick={() => dispatch(toggleSidebar())}
+              size="sm"
+            />
           </Group>
         </Group>
 
-        <Text size="sm" color="dimmed">
+        <Text size="sm" c="dimmed">
           Download eBooks from IRC Highway
         </Text>
 
@@ -108,21 +107,25 @@ export default function Sidebar() {
             }
           })}
           value={index}
-          onChange={(value: "books" | "history") => setIndex(value)}
+          onChange={(value: string) => setIndex(value as "books" | "history")}
           data={[
             { label: "Search History", value: "history" },
             { label: "Previous Downloads", value: "books" }
           ]}
           fullWidth
         />
-      </Navbar.Section>
+      </AppShell.Section>
 
-      <Navbar.Section grow p="xs" style={{ overflow: "auto" }}>
+      <AppShell.Section
+        grow
+        p="xs"
+        className={classes.navbar}
+        style={{ overflow: "auto" }}>
         {index === "history" ? <History /> : <Library />}
-      </Navbar.Section>
+      </AppShell.Section>
 
-      <Navbar.Section className={classes.footer} p="sm">
-        <Group position="apart" noWrap>
+      <AppShell.Section className={classes.footer} p="sm">
+        <Group justify="space-between" wrap="nowrap">
           <Group>
             {username ? (
               <>
@@ -147,7 +150,7 @@ export default function Sidebar() {
             )}
           </Group>
 
-          <Group align="end" spacing="xs">
+          <Group align="end" gap="xs">
             <ActionIcon
               aria-label="Toggle color scheme"
               onClick={() => toggleColorScheme()}>
@@ -164,7 +167,7 @@ export default function Sidebar() {
             </ActionIcon>
           </Group>
         </Group>
-      </Navbar.Section>
-    </Navbar>
+      </AppShell.Section>
+    </>
   );
 }
