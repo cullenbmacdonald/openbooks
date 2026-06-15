@@ -77,6 +77,7 @@ export default function Sidebar() {
                 connected ? "connected" : "disconnected"
               }.`}>
               <ActionIcon
+                aria-label="Toggle notifications"
                 disabled={!connected}
                 onClick={() => dispatch(toggleDrawer())}>
                 <BellSimple weight="bold" size={18} />
@@ -147,14 +148,18 @@ export default function Sidebar() {
           </Group>
 
           <Group align="end" spacing="xs">
-            <ActionIcon onClick={() => toggleColorScheme()}>
+            <ActionIcon
+              aria-label="Toggle color scheme"
+              onClick={() => toggleColorScheme()}>
               {colorScheme === "dark" ? (
                 <Sun size={18} weight="bold" />
               ) : (
                 <MoonStars size={18} weight="bold" />
               )}
             </ActionIcon>
-            <ActionIcon onClick={() => dispatch(toggleSidebar())}>
+            <ActionIcon
+              aria-label="Collapse sidebar"
+              onClick={() => dispatch(toggleSidebar())}>
               <SidebarIcon weight="bold" size={18} />
             </ActionIcon>
           </Group>
