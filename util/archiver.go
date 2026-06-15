@@ -1,36 +1,70 @@
 package util
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"io"
+	"io/fs"
 	"log"
 	"os"
 	"path/filepath"
 
-	"github.com/mholt/archiver/v3"
+	"github.com/mholt/archives"
 )
 
 var (
 	ErrNotFullyCopied = errors.New("didn't copy entire file from the archive")
 )
 
+// realName returns the name to use for archive format identification. Our
+// downloaded files have ".temp" appended to the real filename, so strip that
+// off before handing the name to archives.Identify -- the actual content is
+// still sniffed from the file's magic bytes too, so this is just a hint.
+func realName(path string) string {
+	if filepath.Ext(path) == ".temp" {
+		return path[:len(path)-len(".temp")]
+	}
+	return path
+}
+
+// identifyArchive opens archivePath and identifies its format, using both the
+// (".temp"-stripped) filename and the file's contents as hints. The caller is
+// responsible for closing the returned file.
+func identifyArchive(archivePath string) (archives.Format, *os.File, error) {
+	file, err := os.Open(archivePath)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	format, _, err := archives.Identify(context.Background(), filepath.Base(realName(archivePath)), file)
+	if err != nil {
+		file.Close()
+		return nil, nil, err
+	}
+
+	return format, file, nil
+}
+
 func ExtractArchive(archivePath string) (string, error) {
-	// Our path will have a .temp appended to it so we can't rely on the automatic file-extension based archive extractor selection.
-	// This code was taken from the archiver.Walk(archive string, walkFn WalkFunc) error function.
-	// We just remove .temp before trying to find a matching archive extractor.
-	wIface, err := archiver.ByExtension(archivePath[:len(archivePath)-len(".temp")])
+	format, file, err := identifyArchive(archivePath)
 	if err != nil {
 		return "", err
 	}
-	w, ok := wIface.(archiver.Walker)
+	defer file.Close()
+
+	extractor, ok := format.(archives.Extractor)
 	if !ok {
-		return "", fmt.Errorf("format specified by archive filename is not a walker format: %s (%T)", archivePath, wIface)
+		return "", fmt.Errorf("format identified for archive is not an extractor format: %s (%T)", archivePath, format)
 	}
 
 	var newPath string
-	err = w.Walk(archivePath, func(f archiver.File) error {
-		// Extract only one file per archive. Otherwise, stop walking,
+	err = extractor.Extract(context.Background(), file, func(_ context.Context, f archives.FileInfo) error {
+		if f.IsDir() {
+			return nil
+		}
+
+		// Extract only one file per archive. Otherwise, stop extracting,
 		// remove extracted items, and deliver the archive itself.
 		if newPath != "" {
 			err := os.Remove(newPath)
@@ -38,27 +72,29 @@ func ExtractArchive(archivePath string) (string, error) {
 				return err
 			}
 			newPath = ""
-			return archiver.ErrStopWalk
+			return fs.SkipAll
 		}
 
-		newPath = filepath.Join(filepath.Dir(archivePath), f.Name()+".temp")
+		newPath = filepath.Join(filepath.Dir(archivePath), filepath.Base(f.NameInArchive)+".temp")
 
 		out, err := os.Create(newPath)
 		if err != nil {
 			return err
 		}
+		defer out.Close()
 
-		copied, err := io.Copy(out, f)
+		in, err := f.Open()
+		if err != nil {
+			return err
+		}
+		defer in.Close()
+
+		copied, err := io.Copy(out, in)
 		if err != nil {
 			return err
 		}
 		if copied != f.Size() {
 			return ErrNotFullyCopied
-		}
-
-		err = out.Close()
-		if err != nil {
-			return err
 		}
 
 		return nil
@@ -71,6 +107,7 @@ func ExtractArchive(archivePath string) (string, error) {
 	// If we extracted exactly one file, send that file and remove the zip file.
 	// Otherwise, send the archive itself.
 	if newPath != "" {
+		file.Close()
 		err := os.Remove(archivePath)
 		if err != nil {
 			log.Println("remove error", err)
@@ -84,10 +121,12 @@ func ExtractArchive(archivePath string) (string, error) {
 // IsArchive returns true if the file at the given path is an archive that can
 // be extracted. Returns false otherwise.
 func IsArchive(path string) bool {
-	if filepath.Ext(path) == ".temp" {
-		path = path[:len(path)-len(".temp")]
+	format, file, err := identifyArchive(path)
+	if err != nil {
+		return false
 	}
+	defer file.Close()
 
-	_, err := archiver.ByExtension(path)
-	return err == nil
+	_, ok := format.(archives.Extractor)
+	return ok
 }
