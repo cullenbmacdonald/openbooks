@@ -91,8 +91,8 @@ export default function FacetFilter({
         ? "brand.2"
         : "dark.0"
       : filterValue.length > 0
-      ? "brand.4"
-      : "gray.7";
+        ? "brand.4"
+        : "gray.7";
 
   return (
     <Popover

@@ -76,7 +76,7 @@ const onClose = (dispatch: AppDispatch): void => {
 
 const route = (dispatch: AppDispatch, msg: MessageEvent<any>): void => {
   const getNotif = (): Notification => {
-    let response = JSON.parse(msg.data) as Response;
+    const response = JSON.parse(msg.data) as Response;
     const timestamp = new Date().getTime();
     const notification: Notification = {
       ...response,

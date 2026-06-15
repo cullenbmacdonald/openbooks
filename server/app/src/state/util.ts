@@ -66,10 +66,10 @@ export const displayNotification = ({
 export function downloadFile(relativeURL?: string) {
   if (relativeURL === "" || relativeURL === undefined) return;
 
-  let url = getApiURL();
+  const url = getApiURL();
   url.pathname += relativeURL;
 
-  let link = document.createElement("a");
+  const link = document.createElement("a");
   link.download = "";
   link.target = "_blank";
   link.href = url.href;
