@@ -1,6 +1,7 @@
 # Plan: Frontend & Node dependency upgrade (`server/app`)
 
-Status: **proposed** (not yet started)
+Status: **implemented** on `deps/upgrade-fe` — gates 0-3 green (steps 1-8 done);
+remaining before merge: Gate 4 manual Chrome-extension pass (step 7) and a CI run.
 Tracking: [`docs/docs/developers/todo.md`](../docs/developers/todo.md) → Maintenance →
 "Update the React frontend and Node dependencies".
 
