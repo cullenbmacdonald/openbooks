@@ -13,7 +13,7 @@ import {
 import { Column, Table } from "@tanstack/react-table";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { CaretDown, MagnifyingGlass } from "phosphor-react";
-import { CSSProperties, useRef, useState } from "react";
+import { CSSProperties, JSX, useRef, useState } from "react";
 import { useGetServersQuery } from "../../../state/api";
 
 const stringContains = (first: string, second: string): boolean => {
