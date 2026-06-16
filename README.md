@@ -1,8 +1,13 @@
-# openbooks
+# openbooks (cbm fork)
+
+> **This is a fork of [evan-buss/openbooks](https://github.com/evan-buss/openbooks).**
+> It tracks upstream but adds a Discord bot, a modernized frontend, and an
+> upgraded toolchain. See [What's different in this fork](#whats-different-in-this-fork)
+> below. Releases for this fork are published on the
+> [fork's releases page](https://github.com/cullenbmacdonald/openbooks/releases),
+> not upstream's.
 
 > NOTE: Going forward only the latest release will be supported. If you encounter any issues, be sure you are using the latest version.
-
-[![Docker Pulls](https://img.shields.io/docker/pulls/evanbuss/openbooks.svg)](https://hub.docker.com/r/evanbuss/openbooks/)
 
 Openbooks allows you to download ebooks from irc.irchighway.net quickly and easily.
 
@@ -12,11 +17,36 @@ Openbooks allows you to download ebooks from irc.irchighway.net quickly and easi
 </picture>
 
 
+## What's different in this fork
+
+This fork builds on upstream `openbooks` with the following changes (see the
+[v5.0.0-cbm release notes](https://github.com/cullenbmacdonald/openbooks/releases/tag/v5.0.0-cbm)
+for the full changelog):
+
+- **Discord bot interface** — request and download books from a Discord server.
+  All users are serialized through one shared IRC connection via a `Broker`, and
+  the bot connects with a distinct `<name>-bot` nick to avoid colliding with the
+  web server.
+- **Reworked core IRC client** — the shared `core.IrcClient` now exposes a
+  `Handlers` callback model so every interface (CLI, web, desktop, Discord) is a
+  thin wrapper over one implementation. DCC transfers gained a dial timeout and a
+  per-read idle deadline so stalled senders fail instead of hanging.
+- **Modernized frontend** — React 19, Redux Toolkit 2, Mantine 9, Vite 8, and
+  framer-motion 12, with an ESLint + Vitest/RTL + Playwright test harness.
+- **Upgraded backend toolchain** — Go 1.26, migrated `mholt/archiver/v3` →
+  `mholt/archives` (v4), and refreshed Go/npm dependencies.
+- **Docs for coding agents** — `CLAUDE.md` plus an engineering docs section.
+
+> Docker images are published by upstream (`evanbuss/openbooks`) and do **not**
+> include these fork changes. To run this fork, use a
+> [fork release binary](https://github.com/cullenbmacdonald/openbooks/releases)
+> or build from source (see [Development](#development)).
+
 ## Getting Started
 
 ### Binary
 
-1. Download the latest release for your platform from the [releases page](https://github.com/evan-buss/openbooks/releases).
+1. Download the latest release for your platform from this fork's [releases page](https://github.com/cullenbmacdonald/openbooks/releases).
 2. Run the binary
    - Linux users may have to run `chmod +x [binary name]` to make it executable
 3. `./openbooks --help`
@@ -95,13 +125,15 @@ go build -tags webview
 ## Technology
 
 - Backend
-  - Golang
+  - Golang (1.26)
   - Chi
   - gorilla/websocket
-  - Archiver (extract files from various archive formats)
+  - mholt/archives (extract files from various archive formats)
+  - discordgo (Discord bot interface)
 - Frontend
-  - React.js
+  - React 19
   - TypeScript
-  - Redux / Redux Toolkit
-  - Mantine UI / @emotion/react
+  - Redux / Redux Toolkit 2
+  - Mantine 9 UI
   - Framer Motion
+  - Vite 8 (build) · Vitest / RTL · Playwright (tests)
