@@ -137,6 +137,7 @@ export default function BookTable({ books }: BookTableProps) {
         enableColumnFilter: false
       }),
       columnHelper.display({
+        id: "download",
         header: "Download",
         size: cols(1),
         enableColumnFilter: false,
@@ -225,14 +226,19 @@ export default function BookTable({ books }: BookTableProps) {
             return (
               <Table.Tr key={row.id} style={{ height: 50 }}>
                 {row.getVisibleCells().map((cell) => {
+                  const content = flexRender(
+                    cell.column.columnDef.cell,
+                    cell.getContext()
+                  );
                   return (
                     <Table.Td key={cell.id}>
-                      <Text lineClamp={1} c="dark">
-                        {flexRender(
-                          cell.column.columnDef.cell,
-                          cell.getContext()
-                        )}
-                      </Text>
+                      {cell.column.id === "download" ? (
+                        content
+                      ) : (
+                        <Text lineClamp={1} c="dark">
+                          {content}
+                        </Text>
+                      )}
                     </Table.Td>
                   );
                 })}

@@ -118,7 +118,8 @@ export default function SearchPage() {
             </ActionIcon>
           )}
           <TextInput
-            className={classes.wFull}
+            flex={1}
+            miw={0}
             variant="filled"
             disabled={activeItem !== null && !activeItem.results}
             value={searchQuery}
