@@ -39,7 +39,11 @@ export const useSidebarButtonStyle = createStyles(
       },
       label: {
         paddingLeft: theme.spacing.sm,
-        width: "100%",
+        flex: 1,
+        minWidth: 0,
+        overflow: "hidden",
+        textOverflow: "ellipsis",
+        whiteSpace: "nowrap",
         textAlign: "start"
       }
     };
