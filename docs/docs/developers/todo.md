@@ -31,6 +31,13 @@ sync as things land.
 
 ## Maintenance
 
-- [ ] **Update the React frontend and Node dependencies** (`server/app`).
-- [ ] **Update to the latest Go release and bump module dependencies**
-  (`go.mod` currently targets `go 1.19`).
+- [ ] **Update the React frontend and Node dependencies** (`server/app`). Plan:
+  [Frontend & Node dependency upgrade](../../plans/frontend-deps-upgrade.md)
+  (Mantine 5→9 is the load-bearing migration; includes a Chrome-driven
+  verification loop against the mock servers).
+- [x] **Update to the latest Go release and bump module dependencies**
+  (`go.mod` now targets `go 1.26.4`). Plan:
+  [Go toolchain & module dependency upgrade](../../plans/golang-deps-upgrade.md)
+  (`mholt/archiver/v3` → v4 `mholt/archives` is the load-bearing rewrite;
+  includes a build/cross-compile/race/`govulncheck` + mock-driven verification
+  loop). Done.
