@@ -1,31 +1,41 @@
-import { createStyles } from "@mantine/core";
+import { getThemeColor } from "@mantine/core";
+import { createStyles } from "@mantine/emotion";
 
 export interface SidebarButtonStyleProps {
   isActive?: boolean;
 }
 
 export const useSidebarButtonStyle = createStyles(
-  (theme, { isActive = false }: SidebarButtonStyleProps) => {
-    const isDark = theme.colorScheme === "dark";
+  (theme, { isActive = false }: SidebarButtonStyleProps, u) => {
+    const primaryColor = getThemeColor(undefined, theme);
 
     return {
       root: {
-        "backgroundColor": isDark ? theme.colors.dark[6] : "white",
-        "borderColor": isActive
-          ? theme.fn.primaryColor()
-          : isDark
-          ? theme.colors.gray[8]
-          : theme.colors.gray[3],
+        "backgroundColor": "white",
+        "borderColor": isActive ? primaryColor : theme.colors.gray[3],
         "boxShadow": isActive ? theme.shadows.sm : "none",
 
         "&:hover": {
-          backgroundColor: isDark ? theme.colors.dark[5] : theme.colors.gray[1]
+          backgroundColor: theme.colors.gray[1]
+        },
+
+        [u.dark]: {
+          "backgroundColor": theme.colors.dark[6],
+          "borderColor": isActive ? primaryColor : theme.colors.gray[8],
+
+          "&:hover": {
+            backgroundColor: theme.colors.dark[5]
+          }
         }
       },
       inner: {
-        color: isDark ? "white" : "black",
+        color: "black",
         fontWeight: "normal",
-        justifyContent: "space-between"
+        justifyContent: "space-between",
+
+        [u.dark]: {
+          color: "white"
+        }
       },
       label: {
         paddingLeft: theme.spacing.sm,

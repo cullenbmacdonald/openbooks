@@ -1,10 +1,4 @@
-import {
-  AnyAction,
-  Dispatch,
-  Middleware,
-  MiddlewareAPI,
-  PayloadAction
-} from "@reduxjs/toolkit";
+import { Middleware, MiddlewareAPI } from "@reduxjs/toolkit";
 import { openbooksApi } from "./api";
 import { deleteHistoryItem } from "./historySlice";
 import {
@@ -45,7 +39,7 @@ export const websocketConn =
         timestamp: new Date().getTime()
       });
 
-    return (next: Dispatch<AnyAction>) => (action: PayloadAction<any>) => {
+    return (next: (action: unknown) => unknown) => (action: unknown) => {
       // Send Message action? Send data to the socket.
       if (sendMessage.match(action)) {
         if (socket.readyState === socket.OPEN) {
@@ -76,7 +70,7 @@ const onClose = (dispatch: AppDispatch): void => {
 
 const route = (dispatch: AppDispatch, msg: MessageEvent<any>): void => {
   const getNotif = (): Notification => {
-    let response = JSON.parse(msg.data) as Response;
+    const response = JSON.parse(msg.data) as Response;
     const timestamp = new Date().getTime();
     const notification: Notification = {
       ...response,

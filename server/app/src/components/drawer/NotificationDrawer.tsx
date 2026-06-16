@@ -7,10 +7,10 @@ import {
   Stack,
   Text,
   Tooltip,
-  useMantineColorScheme
+  useComputedColorScheme
 } from "@mantine/core";
 import { AnimatePresence, motion } from "framer-motion";
-import { BellSimpleSlash } from "phosphor-react";
+import { BellSimpleSlash } from "@phosphor-icons/react";
 import { useSelector } from "react-redux";
 import { NotificationType } from "../../state/messages";
 import {
@@ -27,7 +27,7 @@ export default function NotificationDrawer() {
   );
   const dispatch = useAppDispatch();
 
-  const { colorScheme } = useMantineColorScheme();
+  const colorScheme = useComputedColorScheme("light");
 
   const getIntent = (type: NotificationType): string => {
     switch (type) {
@@ -53,8 +53,8 @@ export default function NotificationDrawer() {
         }
       }}
       title={
-        <Group position="apart">
-          <Text weight="bold" size="lg">
+        <Group justify="space-between">
+          <Text fw="bold" size="lg">
             Notifications
           </Text>
           <Tooltip label="Clear Notifications" position="left">
@@ -80,7 +80,7 @@ export default function NotificationDrawer() {
         </Center>
       ) : (
         <Stack
-          spacing="xs"
+          gap="xs"
           style={{ overflow: "scroll", height: "calc(100% - 44px)" }}>
           <AnimatePresence mode="popLayout">
             {notifications.map((notif) => (
@@ -91,9 +91,9 @@ export default function NotificationDrawer() {
                     timeStyle: "medium"
                   })}>
                   <Text
-                    color="dimmed"
+                    c="dimmed"
                     size="xs"
-                    weight={500}
+                    fw={500}
                     style={{ marginBottom: "0.25rem" }}>
                     {new Date(notif.timestamp).toLocaleTimeString("en-US", {
                       timeStyle: "short"

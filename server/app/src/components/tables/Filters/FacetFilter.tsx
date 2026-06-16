@@ -3,40 +3,40 @@ import {
   Button,
   Center,
   CloseButton,
-  createStyles,
   Group,
   Indicator,
   Popover,
   Text,
-  TextInput
+  TextInput,
+  useComputedColorScheme
 } from "@mantine/core";
+import { createStyles } from "@mantine/emotion";
 import { Column, Table } from "@tanstack/react-table";
 import { useVirtualizer } from "@tanstack/react-virtual";
-import { CaretDown, MagnifyingGlass } from "phosphor-react";
-import { CSSProperties, useRef, useState } from "react";
+import { CaretDown, MagnifyingGlass } from "@phosphor-icons/react";
+import { CSSProperties, JSX, useRef, useState } from "react";
 import { useGetServersQuery } from "../../../state/api";
 
 const stringContains = (first: string, second: string): boolean => {
   return first.toLowerCase().includes(second.toLowerCase());
 };
 
-const useStyles = createStyles((theme) => {
-  const border = `1px solid ${
-    theme.colorScheme === "dark" ? theme.colors.dark[4] : theme.colors.gray[3]
-  }`;
-
+const useStyles = createStyles((theme, _params, u) => {
   return {
     header: {
       padding: 6,
       textTransform: "none"
     },
     search: {
-      borderTop: border,
-      borderBottom: border,
-      background:
-        theme.colorScheme === "dark"
-          ? theme.colors.dark[5]
-          : theme.colors.gray[0]
+      borderTop: `1px solid ${theme.colors.gray[3]}`,
+      borderBottom: `1px solid ${theme.colors.gray[3]}`,
+      background: theme.colors.gray[0],
+
+      [u.dark]: {
+        borderTop: `1px solid ${theme.colors.dark[4]}`,
+        borderBottom: `1px solid ${theme.colors.dark[4]}`,
+        background: theme.colors.dark[5]
+      }
     },
     container: {
       maxHeight: 200,
@@ -45,10 +45,11 @@ const useStyles = createStyles((theme) => {
     },
     button: {
       ["&:hover"]: {
-        backgroundColor:
-          theme.colorScheme === "dark"
-            ? theme.colors.dark[4]
-            : theme.colors.gray[0]
+        backgroundColor: theme.colors.gray[0],
+
+        [u.dark]: {
+          backgroundColor: theme.colors.dark[4]
+        }
       }
     }
   };
@@ -73,7 +74,8 @@ export default function FacetFilter({
   const options = Array.from(column.getFacetedUniqueValues().keys());
   const filteredOptions = options.filter((x) => stringContains(x, filter));
 
-  const { classes, theme } = useStyles();
+  const { classes } = useStyles();
+  const colorScheme = useComputedColorScheme("light");
   const listRef = useRef<HTMLDivElement>(null);
 
   const rowVirtualizer = useVirtualizer({
@@ -86,13 +88,13 @@ export default function FacetFilter({
   const filterValue = (column.getFilterValue() ?? []) as string[];
 
   const buttonColor =
-    theme.colorScheme === "dark"
+    colorScheme === "dark"
       ? filterValue.length > 0
         ? "brand.2"
         : "dark.0"
       : filterValue.length > 0
-      ? "brand.4"
-      : "gray.7";
+        ? "brand.4"
+        : "gray.7";
 
   return (
     <Popover
@@ -107,19 +109,18 @@ export default function FacetFilter({
       <Popover.Target>
         <Button
           variant="subtle"
-          size="xs"
+          size="compact-xs"
           className={classes.button}
-          compact
-          uppercase
+          tt="uppercase"
           color={buttonColor}
           onClick={() => setOpened((o) => !o)}
-          rightIcon={<CaretDown weight="bold" />}>
+          rightSection={<CaretDown weight="bold" />}>
           {placeholder}
         </Button>
       </Popover.Target>
       <Popover.Dropdown>
-        <Group position="apart" className={classes.header}>
-          <Text weight="normal" size="xs" color="dark">
+        <Group justify="space-between" className={classes.header}>
+          <Text fw="normal" size="xs" c="dark">
             Filter {placeholder}
           </Text>
           <CloseButton
@@ -131,7 +132,7 @@ export default function FacetFilter({
         </Group>
         <TextInput
           data-autofocus
-          icon={<MagnifyingGlass weight="bold" />}
+          leftSection={<MagnifyingGlass weight="bold" />}
           className={classes.search}
           variant="unstyled"
           value={filter}
@@ -142,8 +143,7 @@ export default function FacetFilter({
             column.getIsFiltered() && (
               <Button
                 style={{ marginRight: 25, fontWeight: "normal" }}
-                size="xs"
-                compact
+                size="compact-xs"
                 variant="default"
                 color="brand"
                 disabled={filterValue.length === 0}
@@ -197,7 +197,7 @@ export default function FacetFilter({
 
           {filteredOptions.length === 0 && (
             <Center py="xs">
-              <Text color="dimmed" size="xs">
+              <Text c="dimmed" size="xs">
                 No Results
               </Text>
             </Center>
@@ -208,14 +208,9 @@ export default function FacetFilter({
   );
 }
 
-const useFacetStyles = createStyles((theme) => {
-  const border = `1px solid ${
-    theme.colorScheme === "dark" ? theme.colors.dark[4] : theme.colors.gray[3]
-  }`;
-
+const useFacetStyles = createStyles((theme, _params, u) => {
   return {
     entry: {
-      ...theme.fn.focusStyles(),
       height: 30,
       position: "relative",
       display: "flex",
@@ -223,31 +218,38 @@ const useFacetStyles = createStyles((theme) => {
       justifyContent: "start",
       padding: "0 8px",
       cursor: "pointer",
-      borderBottom: border,
+      borderBottom: `1px solid ${theme.colors.gray[3]}`,
       userSelect: "none",
       ["&:hover, &:focus"]: {
-        backgroundColor:
-          theme.colorScheme === "dark"
-            ? theme.colors.dark[7]
-            : theme.colors.gray[0]
+        backgroundColor: theme.colors.gray[0]
+      },
+
+      [u.dark]: {
+        borderBottom: `1px solid ${theme.colors.dark[4]}`,
+
+        ["&:hover, &:focus"]: {
+          backgroundColor: theme.colors.dark[7]
+        }
       }
     },
     entrySelected: {
-      backgroundColor:
-        theme.colorScheme === "dark"
-          ? theme.colors.dark[7]
-          : theme.colors.gray[0]
+      backgroundColor: theme.colors.gray[0],
+
+      [u.dark]: {
+        backgroundColor: theme.colors.dark[7]
+      }
     },
     indicator: {
       width: 2,
       height: "80%",
       position: "absolute",
       left: 0,
-      backgroundColor:
-        theme.colorScheme === "dark"
-          ? theme.colors.brand[3]
-          : theme.colors.brand[4],
-      borderRadius: theme.radius.xl
+      backgroundColor: theme.colors.brand[4],
+      borderRadius: theme.radius.xl,
+
+      [u.dark]: {
+        backgroundColor: theme.colors.brand[3]
+      }
     }
   };
 });
@@ -272,12 +274,14 @@ export function ServerFacetEntry({
   return (
     <Box
       tabIndex={0}
-      className={cx(classes.entry, { [classes.entrySelected]: selected })}
+      className={cx("mantine-focus-auto", classes.entry, {
+        [classes.entrySelected]: selected
+      })}
       style={style}
       onClick={() => onClick(entry)}>
       <div className={cx({ [classes.indicator]: selected })}></div>
 
-      <Text size={12} weight="normal" color="dark" style={{ marginLeft: 20 }}>
+      <Text size="12px" fw="normal" c="dark" style={{ marginLeft: 20 }}>
         <Indicator
           position="middle-start"
           offset={-16}
@@ -300,12 +304,14 @@ export function StandardFacetEntry({
   return (
     <Box
       tabIndex={0}
-      className={cx(classes.entry, { [classes.entrySelected]: selected })}
+      className={cx("mantine-focus-auto", classes.entry, {
+        [classes.entrySelected]: selected
+      })}
       style={style}
       onClick={() => onClick(entry)}>
       <div className={cx({ [classes.indicator]: selected })}></div>
 
-      <Text size={12} weight="normal" color="dark">
+      <Text size="12px" fw="normal" c="dark">
         {entry}
       </Text>
     </Box>

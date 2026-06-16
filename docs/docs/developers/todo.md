@@ -31,10 +31,12 @@ sync as things land.
 
 ## Maintenance
 
-- [ ] **Update the React frontend and Node dependencies** (`server/app`). Plan:
+- [x] **Update the React frontend and Node dependencies** (`server/app`). Plan:
   [Frontend & Node dependency upgrade](../../plans/frontend-deps-upgrade.md)
   (Mantine 5→9 is the load-bearing migration; includes a Chrome-driven
-  verification loop against the mock servers).
+  verification loop against the mock servers). Gates 0-3 (types, lint, unit
+  tests, headless E2E) are green on `deps/upgrade-fe`; the Gate 4 manual
+  Chrome-extension pass and CI run are tracked separately before merge.
 - [x] **Update to the latest Go release and bump module dependencies**
   (`go.mod` now targets `go 1.26.4`). Plan:
   [Go toolchain & module dependency upgrade](../../plans/golang-deps-upgrade.md)
