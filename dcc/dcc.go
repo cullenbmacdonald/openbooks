@@ -11,12 +11,14 @@ import (
 )
 
 // dialTimeout bounds how long we wait to establish the DCC connection.
-const dialTimeout = 30 * time.Second
+const dialTimeout = 45 * time.Second
 
 // idleTimeout is the maximum time to wait for more data during a transfer.
 // It is reset after every successful read, so it only fires when the sender
 // stalls (stops sending) rather than limiting the total transfer duration.
-const idleTimeout = 60 * time.Second
+// IRC Highway bots commonly queue a connection and send no bytes until your
+// slot opens, so this must be generous enough to outlast a typical queue wait.
+const idleTimeout = 300 * time.Second
 
 // There are two types of DCC strings this program accepts.
 // Download contains all of the necessary DCC info parsed from the DCC SEND string
