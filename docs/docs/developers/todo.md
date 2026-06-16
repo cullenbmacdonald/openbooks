@@ -37,9 +37,9 @@ sync as things land.
   verification loop against the mock servers). Gates 0-3 (types, lint, unit
   tests, headless E2E) are green on `deps/upgrade-fe`; the Gate 4 manual
   Chrome-extension pass and CI run are tracked separately before merge.
-- [ ] **Update to the latest Go release and bump module dependencies**
-  (`go.mod` currently targets `go 1.19`). Plan:
+- [x] **Update to the latest Go release and bump module dependencies**
+  (`go.mod` now targets `go 1.26.4`). Plan:
   [Go toolchain & module dependency upgrade](../../plans/golang-deps-upgrade.md)
   (`mholt/archiver/v3` → v4 `mholt/archives` is the load-bearing rewrite;
   includes a build/cross-compile/race/`govulncheck` + mock-driven verification
-  loop).
+  loop). Done.

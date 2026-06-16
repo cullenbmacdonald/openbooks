@@ -1,6 +1,6 @@
 # Plan: Go toolchain & module dependency upgrade
 
-Status: **proposed** (not yet started)
+Status: **completed**
 Tracking: [`docs/docs/developers/todo.md`](../docs/developers/todo.md) → Maintenance →
 "Update to the latest Go release and bump module dependencies".
 
