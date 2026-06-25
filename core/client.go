@@ -5,6 +5,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/evan-buss/openbooks/dcc"
 	"github.com/evan-buss/openbooks/irc"
@@ -100,7 +101,19 @@ func (c *IrcClient) Download(book string) { DownloadBook(c.Conn, book) }
 func (c *IrcClient) StartReader(ctx context.Context, h Handlers) {
 	handler := EventHandler{}
 
-	handler[Ping] = func(string) { c.Conn.Pong(c.serverName) }
+	handler[Ping] = func(line string) {
+		// The server pings us with "PING :<token>" and expects the exact token
+		// echoed back as "PONG :<token>". Replying with anything else (e.g. a
+		// fixed server address) fails the ping check and gets us killed with a
+		// "Ping timeout", silently dropping the IRC link mid-session.
+		if idx := strings.Index(line, "PING"); idx != -1 {
+			if token := strings.TrimSpace(line[idx+len("PING"):]); token != "" {
+				c.Conn.Pong(token)
+				return
+			}
+		}
+		c.Conn.Pong(c.serverName)
+	}
 	handler[Version] = func(line string) { SendVersionInfo(c.Conn, line, c.version) }
 	handler[ServerList] = func(text string) {
 		c.servers = ParseServers(text)
