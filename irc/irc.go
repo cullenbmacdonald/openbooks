@@ -3,7 +3,16 @@ package irc
 import (
 	"crypto/tls"
 	"net"
+	"time"
 )
+
+// dialTimeout bounds how long we wait to establish the IRC connection.
+const dialTimeout = 30 * time.Second
+
+// keepAlive enables TCP keepalive probes so an idle connection stays open
+// through NAT/firewall mappings and a dead peer surfaces instead of leaving us
+// blocked forever on a read.
+const keepAlive = 30 * time.Second
 
 // Conn represents an IRC connection to a server
 type Conn struct {
@@ -26,12 +35,17 @@ func New(username, realname string) *Conn {
 
 // Connect connects to the given server at port 6667
 func (i *Conn) Connect(address string, enableTLS bool) error {
+	dialer := &net.Dialer{
+		Timeout:   dialTimeout,
+		KeepAlive: keepAlive,
+	}
+
 	var conn net.Conn
 	var err error
 	if enableTLS {
-		conn, err = tls.Dial("tcp", address, &tls.Config{InsecureSkipVerify: true})
+		conn, err = tls.DialWithDialer(dialer, "tcp", address, &tls.Config{InsecureSkipVerify: true})
 	} else {
-		conn, err = net.Dial("tcp", address)
+		conn, err = dialer.Dial("tcp", address)
 	}
 
 	if err != nil {
