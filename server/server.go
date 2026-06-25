@@ -117,16 +117,14 @@ func (server *server) startClientHub(ctx context.Context) {
 			server.clients[client.uuid] = client
 		case client := <-server.unregister:
 			if _, ok := server.clients[client.uuid]; ok {
-				_, cancel := context.WithCancel(client.ctx)
+				client.cancel()
 				close(client.send)
-				cancel()
 				delete(server.clients, client.uuid)
 			}
 		case <-ctx.Done():
 			for _, client := range server.clients {
-				_, cancel := context.WithCancel(client.ctx)
+				client.cancel()
 				close(client.send)
-				cancel()
 				delete(server.clients, client.uuid)
 			}
 			return

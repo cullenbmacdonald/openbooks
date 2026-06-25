@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/evan-buss/openbooks/dcc"
 	"github.com/evan-buss/openbooks/irc"
@@ -48,6 +49,14 @@ type Handlers struct {
 	// Erred is called when downloading or parsing a result/book fails.
 	Erred func(err error)
 
+	// Disconnected, if set, is called when the IRC link drops unexpectedly,
+	// before the client begins automatically reconnecting.
+	Disconnected func()
+
+	// Reconnected, if set, is called after the client re-establishes the IRC
+	// link and rejoins the channel following an unexpected drop.
+	Reconnected func()
+
 	// Progress, if set, returns the io.Writer used to report download progress
 	// for a given file. It may return nil.
 	Progress func(filename string, size int64) io.Writer
@@ -60,7 +69,8 @@ type IrcClient struct {
 
 	saveDir    string // directory where downloaded files are written
 	version    string // CTCP VERSION reply
-	serverName string // used for PONG replies
+	serverName string // used for PONG replies and reconnects
+	enableTLS  bool   // whether the connection uses TLS (for reconnects)
 	servers    IrcServers
 }
 
@@ -83,6 +93,7 @@ func (c *IrcClient) Servers() IrcServers { return c.servers }
 // Connect joins the IRC server and the #ebooks channel.
 func (c *IrcClient) Connect(server string, enableTLS bool) error {
 	c.serverName = server
+	c.enableTLS = enableTLS
 	return Join(c.Conn, server, enableTLS)
 }
 
@@ -97,8 +108,66 @@ func (c *IrcClient) Search(searchBot, query string) { SearchBook(c.Conn, searchB
 func (c *IrcClient) Download(book string) { DownloadBook(c.Conn, book) }
 
 // StartReader begins processing IRC events in a goroutine, dispatching to the
-// given handlers. It returns immediately.
+// given handlers. If the IRC link drops unexpectedly, it automatically
+// reconnects and resumes, so every interface (web, CLI, Discord) keeps a live
+// connection without intervention. It returns immediately; the loop runs until
+// ctx is cancelled.
 func (c *IrcClient) StartReader(ctx context.Context, h Handlers) {
+	go c.readLoop(ctx, c.eventHandlers(h), h)
+}
+
+// readLoop runs the blocking reader and reconnects with capped exponential
+// backoff whenever the link drops without ctx being cancelled.
+func (c *IrcClient) readLoop(ctx context.Context, handler EventHandler, h Handlers) {
+	const (
+		minBackoff = 2 * time.Second
+		maxBackoff = 2 * time.Minute
+	)
+	backoff := minBackoff
+
+	for {
+		// Blocks until the link drops (scanner returns) or ctx is cancelled.
+		StartReader(ctx, c.Conn, handler)
+		if ctx.Err() != nil {
+			return
+		}
+
+		// The reader returned but we weren't asked to stop: the link dropped.
+		if h.Disconnected != nil {
+			h.Disconnected()
+		}
+
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case <-time.After(backoff):
+			}
+
+			if err := c.reconnect(); err != nil {
+				invoke(h.Erred, err)
+				backoff = min(backoff*2, maxBackoff)
+				continue
+			}
+
+			backoff = minBackoff
+			if h.Reconnected != nil {
+				h.Reconnected()
+			}
+			break
+		}
+	}
+}
+
+// reconnect closes the dead socket and re-establishes the IRC connection,
+// rejoining the channel.
+func (c *IrcClient) reconnect() error {
+	c.Conn.Disconnect()
+	return Join(c.Conn, c.serverName, c.enableTLS)
+}
+
+// eventHandlers builds the IRC event dispatch table for the given Handlers.
+func (c *IrcClient) eventHandlers(h Handlers) EventHandler {
 	handler := EventHandler{}
 
 	handler[Ping] = func(line string) {
@@ -183,7 +252,7 @@ func (c *IrcClient) StartReader(ctx context.Context, h Handlers) {
 		}
 	}
 
-	go StartReader(ctx, c.Conn, handler)
+	return handler
 }
 
 // progressFor resolves the progress writer (if any) for a given DCC string.
