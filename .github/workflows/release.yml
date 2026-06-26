@@ -8,6 +8,12 @@ on:
     tags:
       - "v*.*.*"
 
+# softprops/action-gh-release needs write access to create the release and
+# upload binaries. Without this the job builds fine but fails the upload with
+# a 403 ("Resource not accessible by integration").
+permissions:
+  contents: write
+
 jobs:
   build:
     name: Upload Release Asset
