@@ -24,11 +24,13 @@ var (
 )
 
 const (
-	// IRC searches are queued server-side and can take a while during busy
-	// periods. Downloads stream a file and are usually quick, but large books
-	// or slow servers warrant a generous window.
-	searchTimeout   = 5 * time.Minute
-	downloadTimeout = 10 * time.Minute
+	// IRC searches are queued server-side and downloads stream over DCC, which
+	// on a slow path (e.g. a hosted server reaching a residential #ebooks server)
+	// can take several minutes. Keep these generous so the bot waits for a slow
+	// transfer rather than reporting a false timeout while it's still in flight.
+	// Discord deferred interactions stay valid ~15 min, so we stay under that.
+	searchTimeout   = 8 * time.Minute
+	downloadTimeout = 13 * time.Minute
 )
 
 // Broker turns the asynchronous, single shared IRC connection into a

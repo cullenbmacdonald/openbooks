@@ -11,21 +11,17 @@ import (
 )
 
 // dialTimeout bounds how long we wait to establish the DCC connection.
-const dialTimeout = 45 * time.Second
+const dialTimeout = 60 * time.Second
 
-// queueTimeout bounds how long we wait for the *first* byte. IRC Highway bots
-// commonly accept the connection immediately but then queue you, sending no
-// bytes until your slot opens. That wait is normal and can be long, so this
-// deadline only needs to be generous enough to outlast a typical queue.
-const queueTimeout = 20 * time.Minute
-
-// idleTimeout is the maximum time to wait for more data once the transfer has
-// actually started. It is reset after every successful read, so it only fires
-// when a sender stalls mid-transfer rather than limiting the total duration.
-// It can be short because a healthy sender, once sending, never goes quiet for
-// long — the long silence we must tolerate is the pre-first-byte queue wait,
-// handled separately by queueTimeout.
-const idleTimeout = 60 * time.Second
+// readTimeout is a generous per-read safety cap, reset after every successful
+// read. Upstream OpenBooks used no read deadline at all and simply waited
+// indefinitely, which is why slow transfers (e.g. a server-to-server hop from a
+// datacenter to a residential #ebooks server, or a queued sender) completed
+// fine. We keep that tolerance but cap it so a genuinely dead sender fails
+// instead of hanging forever with a leftover .temp file. It must be long: the
+// silence we have to tolerate — a queued sender, or a mid-transfer stall on a
+// slow path — is normal and can last several minutes.
+const readTimeout = 15 * time.Minute
 
 // There are two types of DCC strings this program accepts.
 // Download contains all of the necessary DCC info parsed from the DCC SEND string
@@ -92,15 +88,11 @@ func (download Download) Download(writer io.Writer) error {
 	received := 0
 	bytes := make([]byte, 4096)
 	for int64(received) < download.Size {
-		// Before any bytes arrive we may be sitting in the sender's queue, which
-		// is normal and can last many minutes; afterwards a long silence means a
-		// stalled transfer. Use the generous queue deadline until the first byte,
-		// then the tight idle deadline so a real stall fails fast.
-		timeout := idleTimeout
-		if received == 0 {
-			timeout = queueTimeout
-		}
-		if err := conn.SetReadDeadline(time.Now().Add(timeout)); err != nil {
+		// Reset the safety deadline before each read. Because it's reset on every
+		// successful read it only fires when the sender goes completely silent for
+		// readTimeout, not on slow-but-progressing transfers — matching upstream's
+		// "wait as long as it takes" behavior without the risk of hanging forever.
+		if err := conn.SetReadDeadline(time.Now().Add(readTimeout)); err != nil {
 			return err
 		}
 
