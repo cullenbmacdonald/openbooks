@@ -80,6 +80,14 @@ func (c *Client) startIrcConnection(server *server) {
 			c.send <- newStatusResponse(NOTIFY, fmt.Sprintf("Found %s results for your query.", num))
 		},
 		ServerList: func(servers core.IrcServers) { server.repository.servers = servers },
+		Disconnected: func() {
+			c.log.Println("Lost IRC connection. Reconnecting...")
+			c.send <- newStatusResponse(WARNING, "Lost connection to IRC. Reconnecting...")
+		},
+		Reconnected: func() {
+			c.log.Println("Reconnected to IRC.")
+			c.send <- newStatusResponse(SUCCESS, "Reconnected to IRC.")
+		},
 		Erred: func(err error) {
 			c.log.Println(err)
 			c.send <- newErrorResponse("Error processing request.")

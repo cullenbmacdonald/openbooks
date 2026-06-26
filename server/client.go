@@ -51,6 +51,9 @@ type Client struct {
 
 	// Context is used to signal when this client should close.
 	ctx context.Context
+
+	// cancel cancels ctx, tearing down this client's IRC reader/reconnect loop.
+	cancel context.CancelFunc
 }
 
 // readPump pumps messages from the websocket connection to the hub.

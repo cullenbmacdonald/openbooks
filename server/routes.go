@@ -77,13 +77,15 @@ func (server *server) serveWs() http.HandlerFunc {
 			return
 		}
 
+		ctx, cancel := context.WithCancel(context.Background())
 		client := &Client{
 			conn:       conn,
 			send:       make(chan interface{}, 128),
 			uuid:       userId,
 			bookClient: core.NewIrcClient(server.config.UserName, server.config.UserAgent, filepath.Join(server.config.DownloadDir, "books")),
 			log:        log.New(os.Stdout, fmt.Sprintf("CLIENT (%s): ", server.config.UserName), log.LstdFlags|log.Lmsgprefix),
-			ctx:        context.Background(),
+			ctx:        ctx,
+			cancel:     cancel,
 		}
 
 		server.log.Printf("Client connected from %s\n", conn.RemoteAddr().String())
