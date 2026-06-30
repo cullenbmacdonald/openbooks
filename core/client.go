@@ -2,15 +2,31 @@ package core
 
 import (
 	"context"
+	"errors"
 	"io"
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/evan-buss/openbooks/dcc"
 	"github.com/evan-buss/openbooks/irc"
 )
+
+// offerTimeout bounds how long we wait for a book server to respond to a
+// download request before giving up. A live server sends its DCC SEND offer (or
+// a "try another server" notice) within seconds; a longer silence means the
+// chosen #ebooks server is offline or ignoring us, so we fail fast and let the
+// user pick another result instead of hanging. This only covers the wait for
+// the *offer* — once the transfer starts, the generous DCC read deadline takes
+// over, so slow-but-live downloads still complete. It's a var so tests can
+// shorten it.
+var offerTimeout = 45 * time.Second
+
+// ErrNoDownloadOffer is reported via Handlers.Erred when a download request gets
+// no response from the targeted server within offerTimeout.
+var ErrNoDownloadOffer = errors.New("the server didn't respond — it may be offline or full, try a different result")
 
 // Handlers contains the callbacks an IrcClient invokes as IRC events are
 // processed. Post-processing (DCC download + parsing) is performed before these
@@ -72,6 +88,11 @@ type IrcClient struct {
 	serverName string // used for PONG replies and reconnects
 	enableTLS  bool   // whether the connection uses TLS (for reconnects)
 	servers    IrcServers
+
+	erred func(error) // Handlers.Erred, captured so the offer timeout can report
+
+	offerMu    sync.Mutex  // guards offerTimer
+	offerTimer *time.Timer // fires if a download request gets no offer in time
 }
 
 // NewIrcClient creates a client whose downloaded files are written to saveDir.
@@ -104,8 +125,46 @@ func (c *IrcClient) Disconnect() { c.Conn.Disconnect() }
 func (c *IrcClient) Search(searchBot, query string) { SearchBook(c.Conn, searchBot, query) }
 
 // Download requests a book by its full result line. The file is delivered via
-// Handlers.
-func (c *IrcClient) Download(book string) { DownloadBook(c.Conn, book) }
+// Handlers. If the targeted server doesn't respond within offerTimeout, the
+// request is abandoned and Handlers.Erred is called with ErrNoDownloadOffer.
+func (c *IrcClient) Download(book string) {
+	c.armOfferTimeout()
+	DownloadBook(c.Conn, book)
+}
+
+// armOfferTimeout (re)starts the timer that fires if a download request goes
+// unanswered. Any previous pending timer is cancelled first.
+func (c *IrcClient) armOfferTimeout() {
+	c.offerMu.Lock()
+	defer c.offerMu.Unlock()
+	if c.offerTimer != nil {
+		c.offerTimer.Stop()
+	}
+	c.offerTimer = time.AfterFunc(offerTimeout, c.offerTimedOut)
+}
+
+// disarmOfferTimeout cancels a pending offer timeout because the server
+// responded (a transfer started or it reported a bad server).
+func (c *IrcClient) disarmOfferTimeout() {
+	c.offerMu.Lock()
+	defer c.offerMu.Unlock()
+	if c.offerTimer != nil {
+		c.offerTimer.Stop()
+		c.offerTimer = nil
+	}
+}
+
+// offerTimedOut reports ErrNoDownloadOffer unless the timer was already
+// disarmed by a server response (guarded against the stop/fire race).
+func (c *IrcClient) offerTimedOut() {
+	c.offerMu.Lock()
+	fired := c.offerTimer != nil
+	c.offerTimer = nil
+	c.offerMu.Unlock()
+	if fired {
+		invoke(c.erred, ErrNoDownloadOffer)
+	}
+}
 
 // StartReader begins processing IRC events in a goroutine, dispatching to the
 // given handlers. If the IRC link drops unexpectedly, it automatically
@@ -168,6 +227,7 @@ func (c *IrcClient) reconnect() error {
 
 // eventHandlers builds the IRC event dispatch table for the given Handlers.
 func (c *IrcClient) eventHandlers(h Handlers) EventHandler {
+	c.erred = h.Erred
 	handler := EventHandler{}
 
 	handler[Ping] = func(line string) {
@@ -220,6 +280,9 @@ func (c *IrcClient) eventHandlers(h Handlers) EventHandler {
 	}
 
 	handler[BookResult] = func(text string) {
+		// The server answered with a file offer; the transfer is starting, so the
+		// generous DCC read deadline governs from here, not the offer timeout.
+		c.disarmOfferTimeout()
 		path, err := DownloadExtractDCCString(c.saveDir, text, c.progressFor(h, text))
 		if err != nil {
 			c.cleanupTemp(text)
@@ -237,6 +300,8 @@ func (c *IrcClient) eventHandlers(h Handlers) EventHandler {
 		}
 	}
 	handler[BadServer] = func(string) {
+		// The server responded (just unavailably), so this isn't a no-offer hang.
+		c.disarmOfferTimeout()
 		if h.BadServer != nil {
 			h.BadServer()
 		}
