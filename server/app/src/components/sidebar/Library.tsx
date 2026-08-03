@@ -16,7 +16,7 @@ import { defaultAnimation } from "../../utils/animation";
 import { useSidebarButtonStyle } from "./styles";
 
 export default function Library() {
-  const { data, isLoading, isSuccess, isError } = useGetBooksQuery(null);
+  const { data, isLoading, isSuccess, isError, error } = useGetBooksQuery(null);
 
   if (isLoading) {
     return (
@@ -27,10 +27,18 @@ export default function Library() {
   }
 
   if (isError) {
+    // The server answers 404 when it isn't persisting books. Anything else is
+    // a real failure, and reporting it as "persistence disabled" hid session
+    // and connectivity problems behind a plausible-looking message.
+    const status =
+      error !== undefined && "status" in error ? error.status : undefined;
+
     return (
       <Center>
         <Text c="dimmed" size="sm">
-          Book persistence disabled.
+          {status === 404
+            ? "Book persistence disabled."
+            : "Unable to load your library."}
         </Text>
       </Center>
     );
