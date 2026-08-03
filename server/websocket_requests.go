@@ -30,11 +30,11 @@ func (server *server) routeMessage(message Request, c *Client) {
 	err := json.Unmarshal(message.Payload, &obj)
 	if err != nil {
 		server.log.Printf("Invalid request payload. %s.\n", err.Error())
-		c.send <- StatusResponse{
+		c.trySend(StatusResponse{
 			MessageType:      STATUS,
 			NotificationType: DANGER,
 			Title:            "Unknown request payload.",
-		}
+		})
 	}
 
 	switch message.MessageType {
@@ -54,7 +54,7 @@ func (c *Client) startIrcConnection(server *server) {
 	err := c.bookClient.Connect(server.config.Server, server.config.EnableTLS)
 	if err != nil {
 		c.log.Println(err)
-		c.send <- newErrorResponse("Unable to connect to IRC server.")
+		c.trySend(newErrorResponse("Unable to connect to IRC server."))
 		return
 	}
 
@@ -64,33 +64,33 @@ func (c *Client) startIrcConnection(server *server) {
 				c.log.Printf("%d Search Result Parsing Errors\n", len(parseErrors))
 			}
 			c.log.Printf("Sending %d search results.\n", len(books))
-			c.send <- newSearchResponse(books, parseErrors)
+			c.trySend(newSearchResponse(books, parseErrors))
 			if err := os.Remove(resultsFilePath); err != nil {
 				c.log.Printf("Error deleting search results file: %v", err)
 			}
 		},
 		BookDownloaded: func(filePath string) {
 			c.log.Printf("Sending book entitled '%s'.\n", filepath.Base(filePath))
-			c.send <- newDownloadResponse(filePath, server.config.DisableBrowserDownloads)
+			c.trySend(newDownloadResponse(filePath, server.config.DisableBrowserDownloads))
 		},
-		NoResults:      func() { c.send <- newErrorResponse("No results found for the query.") },
-		BadServer:      func() { c.send <- newErrorResponse("Server is not available. Try another one.") },
-		SearchAccepted: func() { c.send <- newStatusResponse(NOTIFY, "Search accepted into the queue.") },
+		NoResults:      func() { c.trySend(newErrorResponse("No results found for the query.")) },
+		BadServer:      func() { c.trySend(newErrorResponse("Server is not available. Try another one.")) },
+		SearchAccepted: func() { c.trySend(newStatusResponse(NOTIFY, "Search accepted into the queue.")) },
 		MatchesFound: func(num string) {
-			c.send <- newStatusResponse(NOTIFY, fmt.Sprintf("Found %s results for your query.", num))
+			c.trySend(newStatusResponse(NOTIFY, fmt.Sprintf("Found %s results for your query.", num)))
 		},
-		ServerList: func(servers core.IrcServers) { server.repository.servers = servers },
+		ServerList: func(servers core.IrcServers) { server.repository.SetServers(servers) },
 		Disconnected: func() {
 			c.log.Println("Lost IRC connection. Reconnecting...")
-			c.send <- newStatusResponse(WARNING, "Lost connection to IRC. Reconnecting...")
+			c.trySend(newStatusResponse(WARNING, "Lost connection to IRC. Reconnecting..."))
 		},
 		Reconnected: func() {
 			c.log.Println("Reconnected to IRC.")
-			c.send <- newStatusResponse(SUCCESS, "Reconnected to IRC.")
+			c.trySend(newStatusResponse(SUCCESS, "Reconnected to IRC."))
 		},
 		Erred: func(err error) {
 			c.log.Println(err)
-			c.send <- newErrorResponse("Error processing request.")
+			c.trySend(newErrorResponse("Error processing request."))
 		},
 	}
 
@@ -105,7 +105,7 @@ func (c *Client) startIrcConnection(server *server) {
 
 	c.bookClient.StartReader(c.ctx, handlers)
 
-	c.send <- ConnectionResponse{
+	c.trySend(ConnectionResponse{
 		StatusResponse: StatusResponse{
 			MessageType:      CONNECT,
 			NotificationType: SUCCESS,
@@ -113,7 +113,7 @@ func (c *Client) startIrcConnection(server *server) {
 			Detail:           fmt.Sprintf("IRC username %s", c.bookClient.Username()),
 		},
 		Name: c.bookClient.Username(),
-	}
+	})
 }
 
 // handle SearchRequests and send the query to the book server
@@ -125,7 +125,7 @@ func (c *Client) sendSearchRequest(s *SearchRequest, server *server) {
 
 	if time.Now().Before(nextAvailableSearch) {
 		remainingSeconds := time.Until(nextAvailableSearch).Seconds()
-		c.send <- newRateLimitResponse(remainingSeconds)
+		c.trySend(newRateLimitResponse(remainingSeconds))
 
 		return
 	}
@@ -133,11 +133,11 @@ func (c *Client) sendSearchRequest(s *SearchRequest, server *server) {
 	c.bookClient.Search(server.config.SearchBot, s.Query)
 	server.lastSearch = time.Now()
 
-	c.send <- newStatusResponse(NOTIFY, "Search request sent.")
+	c.trySend(newStatusResponse(NOTIFY, "Search request sent."))
 }
 
 // handle DownloadRequests by sending the request to the book server
 func (c *Client) sendDownloadRequest(d *DownloadRequest) {
 	c.bookClient.Download(d.Book)
-	c.send <- newStatusResponse(NOTIFY, "Download request received.")
+	c.trySend(newStatusResponse(NOTIFY, "Download request received."))
 }

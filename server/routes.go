@@ -4,7 +4,6 @@ import (
 	"context"
 	"embed"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io/fs"
 	"log"
@@ -19,6 +18,7 @@ import (
 	"github.com/evan-buss/openbooks/core"
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
+	"github.com/gorilla/websocket"
 )
 
 //go:embed app/dist
@@ -26,6 +26,7 @@ var reactClient embed.FS
 
 func (server *server) registerRoutes() *chi.Mux {
 	router := chi.NewRouter()
+	router.Use(server.ensureSession)
 	router.Handle("/*", server.staticFilesHandler("app/dist"))
 	router.Get("/ws", server.serveWs())
 	router.Get("/stats", server.statsHandler())
@@ -44,32 +45,14 @@ func (server *server) registerRoutes() *chi.Mux {
 // serveWs handles websocket requests from the peer.
 func (server *server) serveWs() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		cookie, err := r.Cookie("OpenBooks")
-		if errors.Is(err, http.ErrNoCookie) {
-			cookie = &http.Cookie{
-				Name:     "OpenBooks",
-				Value:    uuid.New().String(),
-				Secure:   false,
-				HttpOnly: true,
-				Expires:  time.Now().Add(time.Hour * 24 * 7),
-				SameSite: http.SameSiteStrictMode,
-			}
-			w.Header().Add("Set-Cookie", cookie.String())
-		}
-
-		userId, err := uuid.Parse(cookie.Value)
-		_, alreadyConnected := server.clients[userId]
-
-		// If invalid UUID or the same browser tries to connect again or multiple browser connections
-		// Don't connect to IRC or create new client
-		if err != nil || alreadyConnected || len(server.clients) > 0 {
-			w.WriteHeader(http.StatusBadRequest)
+		// ensureSession guarantees a session on the context and refreshes the
+		// cookie here so an actively used session keeps sliding forward.
+		session := getUUID(r.Context())
+		if session == uuid.Nil {
+			w.WriteHeader(http.StatusUnauthorized)
 			return
 		}
-
-		upgrader.CheckOrigin = func(req *http.Request) bool {
-			return true
-		}
+		http.SetCookie(w, server.sessionCookie(session, r))
 
 		conn, err := upgrader.Upgrade(w, r, w.Header())
 		if err != nil {
@@ -81,17 +64,35 @@ func (server *server) serveWs() http.HandlerFunc {
 		client := &Client{
 			conn:       conn,
 			send:       make(chan interface{}, 128),
-			uuid:       userId,
+			uuid:       session,
 			bookClient: core.NewIrcClient(server.config.UserName, server.config.UserAgent, filepath.Join(server.config.DownloadDir, "books")),
 			log:        log.New(os.Stdout, fmt.Sprintf("CLIENT (%s): ", server.config.UserName), log.LstdFlags|log.Lmsgprefix),
 			ctx:        ctx,
 			cancel:     cancel,
 		}
 
+		previous, err := server.registerClient(client)
+		if err != nil {
+			server.log.Printf("Refusing connection from %s: %s\n", conn.RemoteAddr().String(), err)
+			// Tell the browser why before hanging up. Nothing was registered
+			// and no pumps were started, so this is the whole teardown.
+			conn.WriteControl(
+				websocket.CloseMessage,
+				websocket.FormatCloseMessage(websocket.ClosePolicyViolation, err.Error()),
+				time.Now().Add(writeWait),
+			)
+			cancel()
+			conn.Close()
+			return
+		}
+
+		if previous != nil {
+			server.log.Println("Browser reconnected. Replacing the previous connection for this session.")
+			previous.close()
+		}
+
 		server.log.Printf("Client connected from %s\n", conn.RemoteAddr().String())
 		client.log.Println("New client created.")
-
-		server.register <- client
 
 		go server.writePump(client)
 		go server.readPump(client)
@@ -117,9 +118,10 @@ func (server *server) statsHandler() http.HandlerFunc {
 	}
 
 	return func(w http.ResponseWriter, r *http.Request) {
-		result := make([]statsReponse, 0, len(server.clients))
+		clients := server.connectedClients()
+		result := make([]statsReponse, 0, len(clients))
 
-		for _, client := range server.clients {
+		for _, client := range clients {
 			details := statsReponse{
 				UUID: client.uuid.String(),
 				Name: client.bookClient.Username(),
@@ -135,7 +137,7 @@ func (server *server) statsHandler() http.HandlerFunc {
 
 func (server *server) serverListHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		json.NewEncoder(w).Encode(server.repository.servers)
+		json.NewEncoder(w).Encode(server.repository.Servers())
 	}
 }
 

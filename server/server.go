@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"errors"
 	"log"
 	"net/http"
 	"os"
@@ -25,14 +26,16 @@ type server struct {
 	// Shared data
 	repository *Repository
 
-	// Registered clients.
+	// clientsMutex guards clients. The map is mutated when websocket
+	// connections come and go and read from unrelated HTTP handler goroutines
+	// (/ws, /stats, /library), so every access has to hold it. Reading a map
+	// while another goroutine writes it is a data race that can hand back
+	// garbage or panic the whole process with "concurrent map read and map
+	// write".
+	clientsMutex sync.RWMutex
+
+	// Registered clients, keyed by the browser's session UUID.
 	clients map[uuid.UUID]*Client
-
-	// Register requests from the clients.
-	register chan *Client
-
-	// Unregister requests from clients.
-	unregister chan *Client
 
 	log *log.Logger
 
@@ -42,6 +45,10 @@ type server struct {
 	// The time the last search was performed. Used to rate limit searches.
 	lastSearch time.Time
 }
+
+// errSessionBusy is returned when a different browser session already holds the
+// single shared IRC connection.
+var errSessionBusy = errors.New("another session is already connected")
 
 // Config contains settings for server
 type Config struct {
@@ -69,8 +76,6 @@ func New(config Config) *server {
 	return &server{
 		repository: NewRepository(),
 		config:     &config,
-		register:   make(chan *Client),
-		unregister: make(chan *Client),
 		clients:    make(map[uuid.UUID]*Client),
 		log:        log.New(os.Stdout, "SERVER: ", log.LstdFlags|log.Lmsgprefix),
 	}
@@ -108,28 +113,66 @@ func Start(config Config) {
 	server.log.Fatal(http.ListenAndServe(":"+config.Port, router))
 }
 
-// The client hub is to be run in a goroutine and handles management of
-// websocket client registrations.
+// The client hub is to be run in a goroutine. It tears every client down when
+// the server shuts down.
 func (server *server) startClientHub(ctx context.Context) {
-	for {
-		select {
-		case client := <-server.register:
-			server.clients[client.uuid] = client
-		case client := <-server.unregister:
-			if _, ok := server.clients[client.uuid]; ok {
-				client.cancel()
-				close(client.send)
-				delete(server.clients, client.uuid)
-			}
-		case <-ctx.Done():
-			for _, client := range server.clients {
-				client.cancel()
-				close(client.send)
-				delete(server.clients, client.uuid)
-			}
-			return
+	<-ctx.Done()
+	for _, client := range server.connectedClients() {
+		server.unregisterClient(client)
+	}
+}
+
+// registerClient claims the single connection slot for the client's session.
+//
+// A browser that reconnects (page refresh, wake from sleep, flaky network)
+// races its own previous connection: the old socket usually isn't reaped until
+// its read deadline expires, up to pongWait later. Rejecting the new
+// connection in that window locks the user out of their own session and looks
+// exactly like being logged out, so the newest connection wins and the stale
+// one is returned to the caller for teardown.
+//
+// A connection from a *different* session is still refused, because all
+// clients share one IRC link.
+func (server *server) registerClient(client *Client) (*Client, error) {
+	server.clientsMutex.Lock()
+	defer server.clientsMutex.Unlock()
+
+	for session := range server.clients {
+		if session != client.uuid {
+			return nil, errSessionBusy
 		}
 	}
+
+	previous := server.clients[client.uuid]
+	server.clients[client.uuid] = client
+	return previous, nil
+}
+
+// unregisterClient tears the client down and drops it from the registry.
+//
+// It deliberately does nothing to the registry when the session has already
+// been handed to a newer connection, so a slow disconnect can't evict its own
+// replacement. Tearing down the client itself is idempotent.
+func (server *server) unregisterClient(client *Client) {
+	server.clientsMutex.Lock()
+	if current, ok := server.clients[client.uuid]; ok && current == client {
+		delete(server.clients, client.uuid)
+	}
+	server.clientsMutex.Unlock()
+
+	client.close()
+}
+
+// connectedClients returns a snapshot of the currently registered clients.
+func (server *server) connectedClients() []*Client {
+	server.clientsMutex.RLock()
+	defer server.clientsMutex.RUnlock()
+
+	clients := make([]*Client, 0, len(server.clients))
+	for _, client := range server.clients {
+		clients = append(clients, client)
+	}
+	return clients
 }
 
 func (server *server) registerGracefulShutdown(cancel context.CancelFunc) {
