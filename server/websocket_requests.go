@@ -2,6 +2,7 @@ package server
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -90,7 +91,11 @@ func (c *Client) startIrcConnection(server *server) {
 		},
 		Erred: func(err error) {
 			c.log.Println(err)
-			c.send <- newErrorResponse("Error processing request.")
+			if errors.Is(err, core.ErrNoDownloadOffer) {
+				c.send <- newErrorResponse(err.Error())
+			} else {
+				c.send <- newErrorResponse("Error processing request.")
+			}
 		},
 	}
 
